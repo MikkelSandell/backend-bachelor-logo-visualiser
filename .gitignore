@@ -1,0 +1,42 @@
+# Build outputs
+[Dd]ebug/
+[Rr]elease/
+[Bb]in/
+[Oo]bj/
+[Ll]og/
+[Ll]ogs/
+
+# Visual Studio
+.vs/
+*.user
+*.suo
+*.userosscache
+
+# NuGet
+*.nupkg
+*.snupkg
+**/[Pp]ackages/*
+!**/[Pp]ackages/build/
+project.lock.json
+artifacts/
+
+# Rider
+.idea/
+
+# Uploaded files (runtime - excluded from source control)
+**/uploads/products/
+**/uploads/logos/
+!**/uploads/.gitkeep
+
+# Environment-specific config (contains secrets)
+appsettings.Production.json
+appsettings.Staging.json
+
+# .NET secrets
+secrets.json
+.env
+.env.*
+
+# OS
+.DS_Store
+Thumbs.db
