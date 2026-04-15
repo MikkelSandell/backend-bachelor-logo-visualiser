@@ -1,5 +1,6 @@
 using AspNetCoreRateLimit;
 using LogoVisualizer.Api.Extensions;
+using LogoVisualizer.Api.Services;
 using LogoVisualizer.Data;
 using LogoVisualizer.Data.Repositories;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -21,6 +22,11 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 // ---------------------------------------------------------------------------
 builder.Services.AddScoped<IProductRepository, ProductRepository>();
 builder.Services.AddScoped<IPrintZoneRepository, PrintZoneRepository>();
+
+// ---------------------------------------------------------------------------
+// Midocean sample data (loaded once from JSON at startup)
+// ---------------------------------------------------------------------------
+builder.Services.AddSingleton<IMidoceanProductService, MidoceanProductService>();
 
 // ---------------------------------------------------------------------------
 // JWT Authentication — tokens are issued by the external Master application.

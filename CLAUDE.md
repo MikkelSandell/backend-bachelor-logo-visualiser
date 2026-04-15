@@ -32,7 +32,14 @@ The project is a **bachelor's thesis** deliverable. Code and documentation are i
 
 ```
 LogoVisualizer.sln
-├── LogoVisualizer.Api          → Web API entry point (controllers, DTOs, Program.cs)
+├── LogoVisualizer.Api          → Web API entry point
+│   ├── Controllers/            → HTTP controllers
+│   ├── Data/                   → Static data files (e.g. midocean-top10.json)
+│   ├── DTOs/                   → Request/response record types
+│   ├── Extensions/             → IApplicationBuilder extension helpers
+│   ├── Helpers/                → Utility/helper classes
+│   ├── Services/               → Service interfaces + implementations
+│   └── uploads/                → Runtime file upload storage
 └── LogoVisualizer.Data         → EF Core context, entity models, repositories
 ```
 
@@ -88,6 +95,10 @@ Product
 | `LogoVisualizer.Data/Repositories/` | `IProductRepository`, `IPrintZoneRepository` + implementations |
 | `LogoVisualizer.Api/Controllers/ExportController.cs` | PNG composite generation using ImageSharp |
 | `LogoVisualizer.Api/Controllers/LogoUploadController.cs` | Logo file upload; SVG sanitisation is a TODO |
+| `LogoVisualizer.Api/Controllers/MidoceanProductsController.cs` | Read-only endpoints for Midocean sample print data |
+| `LogoVisualizer.Api/Services/IMidoceanProductService.cs` | Service interface for Midocean product data |
+| `LogoVisualizer.Api/Services/MidoceanProductService.cs` | Singleton — loads `midocean-top10.json` once on startup |
+| `LogoVisualizer.Api/Data/midocean-top10.json` | 10 richest Midocean products extracted from the full feed |
 
 ---
 
@@ -115,6 +126,9 @@ dotnet ef database update \
 cd LogoVisualizer.Api
 dotnet user-secrets set "Jwt:Key" "<value>"
 ```
+
+### SDK note
+`global.json` uses `rollForward: latestMajor`, so the project builds with .NET 8 SDK or later (currently tested with .NET 10). The target framework remains `net8.0`.
 
 ---
 
