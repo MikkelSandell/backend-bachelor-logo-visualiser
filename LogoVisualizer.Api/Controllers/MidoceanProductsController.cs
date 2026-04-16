@@ -15,18 +15,38 @@ public class MidoceanProductsController : ControllerBase
         _service = service;
     }
 
-    /// <summary>Returns all 10 Midocean sample products with full print position data.</summary>
+    /// <summary>All 10 Midocean sample products — raw supplier format.</summary>
     [HttpGet]
     [ProducesResponseType<IReadOnlyList<MidoceanProductDto>>(StatusCodes.Status200OK)]
     public IActionResult GetAll() => Ok(_service.GetAll());
 
-    /// <summary>Returns a single Midocean product by its master_code (e.g. S11500). Public.</summary>
+    /// <summary>Single Midocean product by master_code — raw supplier format.</summary>
     [HttpGet("{masterCode}")]
     [ProducesResponseType<MidoceanProductDto>(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public IActionResult GetByMasterCode(string masterCode)
     {
         var product = _service.GetByMasterCode(masterCode);
+        if (product is null) return NotFound(new { error = $"No product found with master_code '{masterCode}'." });
+        return Ok(product);
+    }
+
+    /// <summary>
+    /// All 10 Midocean products adapted to the frontend Product shape
+    /// (id, title, imageUrl, imageWidth, imageHeight, printZones).
+    /// Use this endpoint from the viewer and admin apps.
+    /// </summary>
+    [HttpGet("as-products")]
+    [ProducesResponseType<IReadOnlyList<AdaptedProductDto>>(StatusCodes.Status200OK)]
+    public IActionResult GetAllAdapted() => Ok(_service.GetAllAdapted());
+
+    /// <summary>Single Midocean product adapted to the frontend Product shape.</summary>
+    [HttpGet("{masterCode}/as-product")]
+    [ProducesResponseType<AdaptedProductDto>(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public IActionResult GetAdaptedByMasterCode(string masterCode)
+    {
+        var product = _service.GetAdaptedByMasterCode(masterCode);
         if (product is null) return NotFound(new { error = $"No product found with master_code '{masterCode}'." });
         return Ok(product);
     }

@@ -113,12 +113,12 @@ builder.Services.AddSwaggerGen(c =>
 // ---------------------------------------------------------------------------
 var app = builder.Build();
 
-// Apply pending EF migrations on startup in Development
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
     app.UseSwaggerUI();
-    app.ApplyMigrations();
+    // ApplyMigrations() is intentionally skipped — no LocalDB installed yet.
+    // Re-enable when SQL Server LocalDB is available: app.ApplyMigrations();
 }
 
 // Serve uploaded product images and logos through a controlled route

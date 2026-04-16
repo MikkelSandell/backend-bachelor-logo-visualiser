@@ -2,6 +2,36 @@ using System.Text.Json.Serialization;
 
 namespace LogoVisualizer.Api.DTOs;
 
+// ---------------------------------------------------------------------------
+// Adapted DTOs — Midocean data mapped to the frontend's Product shape
+// ---------------------------------------------------------------------------
+
+public record AdaptedProductDto(
+    string Id,
+    string Title,
+    string ImageUrl,
+    int ImageWidth,
+    int ImageHeight,
+    List<AdaptedPrintZoneDto> PrintZones
+);
+
+public record AdaptedPrintZoneDto(
+    string Id,
+    string Name,
+    int X,
+    int Y,
+    int Width,
+    int Height,
+    double MaxPhysicalWidthMm,
+    double MaxPhysicalHeightMm,
+    List<string> AllowedTechniques,
+    int MaxColors
+);
+
+// ---------------------------------------------------------------------------
+// Raw Midocean DTOs (supplier format)
+// ---------------------------------------------------------------------------
+
 public record MidoceanProductDto(
     [property: JsonPropertyName("master_code")]     string MasterCode,
     [property: JsonPropertyName("master_id")]       string MasterId,

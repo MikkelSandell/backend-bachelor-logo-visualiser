@@ -2,11 +2,13 @@
 
 ## Project overview
 
-**LogoVisualizer** is an ASP.NET Core 8 Web API backend for a promotional merchandise company. It serves two clients:
+**LogoVisualizer** is an ASP.NET Core 10 Web API backend for a promotional merchandise company. It serves two clients:
 - A **Logo Viewer** (embeddable, public) — lets end-customers upload a logo and preview it on a product.
 - An **Admin Tool** (authenticated) — lets internal staff configure products and define rectangular print zones.
 
 This is a **bachelor's thesis** project. Code and docs are in English; UI strings are in Danish.
+
+**Current data source**: No database is in use. All product data is served from `LogoVisualizer.Api/Data/midocean-top10.json` via `MidoceanProductService`. The DB-backed endpoints exist in code but require a database connection. `app.ApplyMigrations()` is commented out in `Program.cs`.
 
 ---
 
@@ -15,36 +17,51 @@ This is a **bachelor's thesis** project. Code and docs are in English; UI string
 ```
 LogoVisualizer.sln
 ├── LogoVisualizer.Api      — Web API (controllers, DTOs, services, Program.cs)
-│   ├── Controllers/        — HTTP controllers
+│   ├── Controllers/        — HTTP controllers (MidoceanProductsController is the active one)
 │   ├── Data/               — Static data files (midocean-top10.json)
-│   ├── DTOs/               — Request/response record types
+│   ├── DTOs/               — Request/response record types (incl. AdaptedProductDto)
 │   ├── Extensions/         — IApplicationBuilder helpers
 │   ├── Helpers/            — Utility/helper classes
+│   ├── Properties/         — launchSettings.json (forces Development environment)
 │   └── Services/           — Service interfaces + implementations
 └── LogoVisualizer.Data     — EF Core models, AppDbContext, repositories
+    └── Migrations/         — Created, not yet applied (no DB)
 ```
 
 ---
 
 ## Tech stack
 
-- **Runtime**: .NET 8, ASP.NET Core (controller-based, not Minimal API)
-- **ORM**: Entity Framework Core 8 with SQL Server
-- **Auth**: JWT Bearer (`Microsoft.AspNetCore.Authentication.JwtBearer`) — tokens from external *Master* app
+- **Runtime**: .NET 10, ASP.NET Core (controller-based, not Minimal API)
+- **ORM**: Entity Framework Core 10 — wired but not active (no DB)
+- **Auth**: JWT Bearer (`Microsoft.AspNetCore.Authentication.JwtBearer`) — tokens from external *Master* app (wired, not active)
 - **Rate limiting**: `AspNetCoreRateLimit`
 - **Image processing**: `SixLabors.ImageSharp`
-- **API docs**: Swashbuckle (OpenAPI 3 / Swagger)
+- **API docs**: Swashbuckle (OpenAPI 3 / Swagger) — available at `http://localhost:5000/swagger`
 
 ---
 
 ## Data model summary
 
+### EF Core entities (DB-backed, not active)
 ```
 Product (Id, Title, ImagePath, ImageWidth, ImageHeight)
   └── PrintZone[] (Id, ProductId, Name, X, Y, Width, Height,
                    MaxPhysicalWidthMm, MaxPhysicalHeightMm, MaxColors)
         └── PrintZoneTechnique[] → PrintTechnique (Id, Name)
 ```
+
+### Adapted DTOs (active, from Midocean JSON)
+```
+AdaptedProductDto (Id, Title, ImageUrl, ImageWidth, ImageHeight)
+  └── AdaptedPrintZoneDto[] (Id, Name, X, Y, Width, Height,
+                              MaxPhysicalWidthMm, MaxPhysicalHeightMm,
+                              AllowedTechniques: string[])
+```
+
+Technique code mapping: `TR/ST1/SP` → `screen_print`, `E/EM` → `embroidery`,
+`EN/B` → `engraving`, `SL/SA` → `sublimation`, `DTG/TDT/TT` → `digital_print`,
+`TP/P` → `pad_print`. Unknown codes are silently dropped.
 
 ---
 
@@ -69,14 +86,16 @@ Product (Id, Title, ImagePath, ImageWidth, ImageHeight)
 
 ---
 
-## Midocean sample data
+## Midocean data — active endpoints
 
-`LogoVisualizer.Api/Data/midocean-top10.json` contains 10 real Midocean supplier products with full print-position data (positions, techniques, images, coordinate points). It is loaded once at startup by `MidoceanProductService` (singleton) and exposed via:
+`LogoVisualizer.Api/Data/midocean-top10.json` contains 10 Midocean supplier products with full print-position data. Loaded once at startup by `MidoceanProductService` (singleton) and exposed via:
 
-- `GET /api/midocean-products` — all 10 products
-- `GET /api/midocean-products/{masterCode}` — single product by `master_code` (e.g. `S11500`)
+- `GET /api/midocean-products` — all 10 products (raw Midocean format)
+- `GET /api/midocean-products/{masterCode}` — single product (raw)
+- `GET /api/midocean-products/as-products` — all 10 adapted to `AdaptedProductDto` (frontend shape)
+- `GET /api/midocean-products/{masterCode}/as-product` — single adapted product
 
-These endpoints are public (no `[Authorize]`). Do not modify the JSON file directly — re-extract from `Midocean-print-data.json` in the project root if the data needs updating.
+These are the primary endpoints used by the frontend. Do not modify the JSON file directly — re-extract from `Midocean-print-data.json` in the project root if data needs updating.
 
 ---
 

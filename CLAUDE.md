@@ -6,7 +6,7 @@ This file gives Claude (and other AI coding assistants) the context needed to wo
 
 ## What this project is
 
-**LogoVisualizer** is an internal .NET 8 backend service for a promotional merchandise company. It allows:
+**LogoVisualizer** is an internal .NET 10 backend service for a promotional merchandise company. It allows:
 - **End-customers** to upload their logo and preview it on a product (t-shirts, mugs, pens, etc.) within defined print zones.
 - **Admin users** to set up products by uploading product images and drawing rectangular print zones, each with physical size limits and allowed print techniques.
 
@@ -16,15 +16,19 @@ The project is a **bachelor's thesis** deliverable. Code and documentation are i
 
 ## Tech Stack
 
-| Layer              | Technology                                   |
-|--------------------|----------------------------------------------|
-| Web API framework  | ASP.NET Core 8 (controller-based)            |
-| ORM                | Entity Framework Core 8                      |
-| Database           | Microsoft SQL Server (LocalDB for dev)       |
-| Authentication     | JWT Bearer — tokens issued by *Master* app   |
-| Rate limiting      | `AspNetCoreRateLimit`                        |
-| Image compositing  | `SixLabors.ImageSharp`                       |
-| API docs           | Swashbuckle / OpenAPI 3                      |
+| Layer              | Technology                                        |
+|--------------------|---------------------------------------------------|
+| Web API framework  | ASP.NET Core 10 (controller-based)                |
+| ORM                | Entity Framework Core 10 (not active — no DB yet) |
+| Database           | Microsoft SQL Server — **not in use, no DB installed** |
+| Authentication     | JWT Bearer — tokens issued by *Master* app (wired, not active) |
+| Rate limiting      | `AspNetCoreRateLimit`                             |
+| Image compositing  | `SixLabors.ImageSharp`                            |
+| API docs           | Swashbuckle / OpenAPI 3                           |
+
+### Active data source
+
+All product data is currently served from **`LogoVisualizer.Api/Data/midocean-top10.json`** via `MidoceanProductService`. The DB-backed endpoints exist in code but require a database connection to function. `app.ApplyMigrations()` is commented out in `Program.cs`.
 
 ---
 
@@ -33,14 +37,23 @@ The project is a **bachelor's thesis** deliverable. Code and documentation are i
 ```
 LogoVisualizer.sln
 ├── LogoVisualizer.Api          → Web API entry point
-│   ├── Controllers/            → HTTP controllers
-│   ├── Data/                   → Static data files (e.g. midocean-top10.json)
-│   ├── DTOs/                   → Request/response record types
+│   ├── Controllers/
+│   │   ├── MidoceanProductsController.cs  ← active (no DB needed)
+│   │   ├── ProductsController.cs          ← DB-backed (requires DB)
+│   │   ├── PrintZonesController.cs        ← DB-backed (requires DB)
+│   │   ├── TechniquesController.cs        ← DB-backed (requires DB)
+│   │   ├── LogoUploadController.cs        ← logo upload
+│   │   └── ExportController.cs           ← PNG composite
+│   ├── Data/                   → Static data files (midocean-top10.json)
+│   ├── DTOs/                   → Request/response record types (incl. AdaptedProductDto)
 │   ├── Extensions/             → IApplicationBuilder extension helpers
 │   ├── Helpers/                → Utility/helper classes
+│   ├── Properties/
+│   │   └── launchSettings.json → Forces ASPNETCORE_ENVIRONMENT=Development
 │   ├── Services/               → Service interfaces + implementations
 │   └── uploads/                → Runtime file upload storage
 └── LogoVisualizer.Data         → EF Core context, entity models, repositories
+    └── Migrations/             → Created but not yet applied (no DB)
 ```
 
 `LogoVisualizer.Api` references `LogoVisualizer.Data`.
@@ -48,6 +61,8 @@ LogoVisualizer.sln
 ---
 
 ## Data Model
+
+### EF Core entities (DB-backed, not active)
 
 ```
 Product
@@ -62,7 +77,21 @@ Product
               └── PrintTechnique { Id, Name, Description }
 ```
 
-`PrintTechnique` rows are seeded in the initial migration (Screen Print, Embroidery, Sublimation, Engraving, DTG, Pad Print, Digital Print).
+### Adapted DTOs (active, served from Midocean JSON)
+
+```
+AdaptedProductDto
+  ├── Id, Title, ImageUrl, ImageWidth, ImageHeight
+  └── PrintZones: AdaptedPrintZoneDto[]
+        ├── Id, Name
+        ├── X, Y, Width, Height          ← derived from Midocean point arrays
+        ├── MaxPhysicalWidthMm, MaxPhysicalHeightMm
+        └── AllowedTechniques: string[]  ← mapped from Midocean technique codes
+```
+
+Technique code mapping (`MapTechnique()` in `MidoceanProductService`):
+`TR/ST1/SP` → `screen_print`, `E/EM` → `embroidery`, `EN/B` → `engraving`,
+`SL/SA` → `sublimation`, `DTG/TDT/TT` → `digital_print`, `TP/P` → `pad_print`.
 
 ---
 
@@ -89,16 +118,18 @@ Product
 
 | File | Purpose |
 |------|---------|
-| `LogoVisualizer.Api/Program.cs` | DI registration, middleware pipeline |
-| `LogoVisualizer.Api/appsettings.Development.json` | LocalDB connection string, dev JWT key |
+| `LogoVisualizer.Api/Program.cs` | DI registration, middleware pipeline — `ApplyMigrations()` is commented out |
+| `LogoVisualizer.Api/Properties/launchSettings.json` | Forces `ASPNETCORE_ENVIRONMENT=Development`; Swagger always available |
+| `LogoVisualizer.Api/appsettings.Development.json` | LocalDB connection string (for future use), dev JWT key |
 | `LogoVisualizer.Data/AppDbContext.cs` | EF model config, index constraints, technique seed data |
 | `LogoVisualizer.Data/Repositories/` | `IProductRepository`, `IPrintZoneRepository` + implementations |
+| `LogoVisualizer.Api/Controllers/MidoceanProductsController.cs` | Active endpoints — raw and adapted Midocean products |
 | `LogoVisualizer.Api/Controllers/ExportController.cs` | PNG composite generation using ImageSharp |
 | `LogoVisualizer.Api/Controllers/LogoUploadController.cs` | Logo file upload; SVG sanitisation is a TODO |
-| `LogoVisualizer.Api/Controllers/MidoceanProductsController.cs` | Read-only endpoints for Midocean sample print data |
-| `LogoVisualizer.Api/Services/IMidoceanProductService.cs` | Service interface for Midocean product data |
-| `LogoVisualizer.Api/Services/MidoceanProductService.cs` | Singleton — loads `midocean-top10.json` once on startup |
-| `LogoVisualizer.Api/Data/midocean-top10.json` | 10 richest Midocean products extracted from the full feed |
+| `LogoVisualizer.Api/Services/IMidoceanProductService.cs` | Interface — `GetAll()`, `GetByMasterCode()`, `GetAllAdapted()`, `GetAdaptedByMasterCode()` |
+| `LogoVisualizer.Api/Services/MidoceanProductService.cs` | Singleton — loads `midocean-top10.json`, adapts to frontend shape |
+| `LogoVisualizer.Api/Data/midocean-top10.json` | 10 Midocean products extracted from the full feed |
+| `LogoVisualizer.Api/DTOs/MidoceanDtos.cs` | Raw Midocean DTO types + `AdaptedProductDto` / `AdaptedPrintZoneDto` |
 
 ---
 
@@ -108,10 +139,10 @@ Product
 ```bash
 cd LogoVisualizer.Api
 dotnet run
-# Swagger: https://localhost:5001/swagger
+# Swagger: http://localhost:5000/swagger
 ```
 
-### Add a migration
+### Add a migration (for when DB is ready)
 ```bash
 dotnet ef migrations add <Name> \
   --project LogoVisualizer.Data \
@@ -127,13 +158,12 @@ cd LogoVisualizer.Api
 dotnet user-secrets set "Jwt:Key" "<value>"
 ```
 
-### SDK note
-`global.json` uses `rollForward: latestMajor`, so the project builds with .NET 8 SDK or later (currently tested with .NET 10). The target framework remains `net8.0`.
-
 ---
 
 ## Known TODOs / Open Items
 
+- **No database**: `app.ApplyMigrations()` is commented out in `Program.cs`. Migrations exist under `LogoVisualizer.Data/Migrations/` — uncomment when LocalDB or SQL Server is available.
+- **Image dimensions assumed**: Midocean CDN images are assumed to be 1000×1000 px. Actual dimensions should be detected or fetched if they differ.
 - **SVG sanitisation**: `LogoUploadController` logs a warning but does not yet strip `<script>` tags from SVG uploads. Add an SVG sanitiser before production.
 - **Auth integration with Master**: The JWT config is set up generically. Once you have the Master app's actual issuer/audience/key, set those values in user-secrets and confirm token validation works end-to-end.
 - **File serving route**: Uploaded files are stored under `uploads/` but there is no `/api/files/` controller yet. Add a `FilesController` that serves files from the upload directory with correct content-type headers.

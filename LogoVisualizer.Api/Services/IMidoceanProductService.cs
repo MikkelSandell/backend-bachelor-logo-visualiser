@@ -6,4 +6,7 @@ public interface IMidoceanProductService
 {
     IReadOnlyList<MidoceanProductDto> GetAll();
     MidoceanProductDto? GetByMasterCode(string masterCode);
+
+    IReadOnlyList<AdaptedProductDto> GetAllAdapted();
+    AdaptedProductDto? GetAdaptedByMasterCode(string masterCode);
 }
