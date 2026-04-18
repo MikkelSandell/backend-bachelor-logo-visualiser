@@ -61,12 +61,16 @@ builder.Services.AddInMemoryRateLimiting();
 builder.Services.AddSingleton<IRateLimitConfiguration, RateLimitConfiguration>();
 
 // ---------------------------------------------------------------------------
-// CORS — allow the viewer to be embedded from any origin (MVP).
-// Tighten AllowedHosts in production.
+// CORS — allow the viewer to be embedded and accessed from frontend dev servers.
+// In production, restrict to actual origins.
 // ---------------------------------------------------------------------------
 builder.Services.AddCors(options =>
     options.AddDefaultPolicy(policy =>
-        policy.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader()));
+        policy
+            .WithOrigins("http://localhost:5173", "http://localhost:5174", "http://localhost:3000")
+            .AllowAnyMethod()
+            .AllowAnyHeader()
+            .AllowCredentials()));
 
 // ---------------------------------------------------------------------------
 // Controllers & Swagger / OpenAPI
