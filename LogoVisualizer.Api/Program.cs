@@ -121,8 +121,7 @@ if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
     app.UseSwaggerUI();
-    // ApplyMigrations() is intentionally skipped — no LocalDB installed yet.
-    // Re-enable when SQL Server LocalDB is available: app.ApplyMigrations();
+    app.ApplyMigrations();  // Apply pending migrations on startup
 }
 
 // Serve uploaded product images and logos through a controlled route

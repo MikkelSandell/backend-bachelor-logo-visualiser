@@ -1,0 +1,47 @@
+services:
+  mssql:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: logo-db
+    environment:
+      ACCEPT_EULA: 'Y'
+      SA_PASSWORD: 'YourStrong!Passw0rd'
+      MSSQL_PID: 'Developer'
+    ports:
+      - "1433:1433"
+    volumes:
+      - sql_data:/var/opt/mssql
+    networks:
+      - logo-network
+    healthcheck:
+      test: /opt/mssql-tools/bin/sqlcmd -S localhost -U sa -P "YourStrong!Passw0rd" -Q "SELECT 1" || exit 1
+      interval: 10s
+      timeout: 10s
+      retries: 30
+      start_period: 180s
+
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: logo-api
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      ConnectionStrings__DefaultConnection: "Server=mssql,1433;Database=LogoVisualizer;User Id=sa;Password=YourStrong!Passw0rd;TrustServerCertificate=True;"
+      Jwt__Issuer: "MasterApp"
+      Jwt__Audience: "LogoVisualizer"
+      Jwt__Key: "your-production-jwt-key-minimum-32-characters-long"
+    ports:
+      - "5000:5000"
+    depends_on:
+      - mssql
+    networks:
+      - logo-network
+    restart: unless-stopped
+
+networks:
+  logo-network:
+    driver: bridge
+
+volumes:
+  sql_data:
+    driver: local
