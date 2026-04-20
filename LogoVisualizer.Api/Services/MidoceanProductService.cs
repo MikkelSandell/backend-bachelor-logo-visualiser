@@ -75,6 +75,8 @@ public class MidoceanProductService : IMidoceanProductService
             .DefaultIfEmpty(0)
             .Max();
 
+        var imageUrl = pos.Images.FirstOrDefault()?.ImageBlank ?? "";
+
         return new AdaptedPrintZoneDto(
             Id:                  pos.PositionId,
             Name:                pos.PositionId,
@@ -82,7 +84,8 @@ public class MidoceanProductService : IMidoceanProductService
             MaxPhysicalWidthMm:  pos.MaxPrintSizeWidth,
             MaxPhysicalHeightMm: pos.MaxPrintSizeHeight,
             AllowedTechniques:   techniques.Count > 0 ? techniques : ["digital_print"],
-            MaxColors:           maxColors
+            MaxColors:           maxColors,
+            ImageUrl:            imageUrl
         );
     }
 

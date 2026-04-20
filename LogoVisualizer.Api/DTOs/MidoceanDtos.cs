@@ -25,7 +25,8 @@ public record AdaptedPrintZoneDto(
     double MaxPhysicalWidthMm,
     double MaxPhysicalHeightMm,
     List<string> AllowedTechniques,
-    int MaxColors
+    int MaxColors,
+    string ImageUrl
 );
 
 // ---------------------------------------------------------------------------

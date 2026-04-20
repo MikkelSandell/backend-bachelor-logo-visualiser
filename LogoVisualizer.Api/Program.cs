@@ -121,7 +121,7 @@ if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
     app.UseSwaggerUI();
-    app.ApplyMigrations();  // Apply pending migrations on startup
+    // app.ApplyMigrations();  // Uncomment when LocalDB / SQL Server is available
 }
 
 // Serve uploaded product images and logos through a controlled route
