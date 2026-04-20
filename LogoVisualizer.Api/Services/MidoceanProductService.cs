@@ -35,23 +35,34 @@ public class MidoceanProductService : IMidoceanProductService
 
     private static AdaptedProductDto Adapt(MidoceanProductDto p)
     {
-        // Use the first position's first blank image as the product image.
-        // Midocean print-position images are typically 1000×1000 px.
-        var firstPos  = p.PrintingPositions.FirstOrDefault();
-        var imageUrl  = firstPos?.Images.FirstOrDefault()?.ImageBlank ?? "";
-        const int imageDimension = 1000; // TODO: fetch actual dimensions when needed
+        // Use the first item_color_number as the primary colour so that all
+        // positions (FRONT, BACK, CHEST, ARM …) show the same shirt colour.
+        var primaryColor = p.ItemColorNumbers.FirstOrDefault() ?? "";
+
+        var firstPos = p.PrintingPositions.FirstOrDefault();
+        var imageUrl = FindImageForColor(firstPos?.Images ?? [], primaryColor)
+                       ?? firstPos?.Images.FirstOrDefault()?.ImageBlank ?? "";
+
+        const int imageDimension = 1000; // Midocean position images are 1000×1000 px
 
         return new AdaptedProductDto(
-            Id:         p.MasterCode,
-            Title:      p.MasterCode,
-            ImageUrl:   imageUrl,
-            ImageWidth: imageDimension,
+            Id:          p.MasterCode,
+            Title:       p.MasterCode,
+            ImageUrl:    imageUrl,
+            ImageWidth:  imageDimension,
             ImageHeight: imageDimension,
-            PrintZones: p.PrintingPositions.Select(AdaptZone).ToList()
+            PrintZones:  p.PrintingPositions.Select(pos => AdaptZone(pos, primaryColor)).ToList()
         );
     }
 
-    private static AdaptedPrintZoneDto AdaptZone(MidoceanPrintingPositionDto pos)
+    /// Returns the blank image URL whose filename contains -{colorCode}_POS, or null.
+    private static string? FindImageForColor(List<MidoceanPositionImageDto> images, string colorCode) =>
+        string.IsNullOrEmpty(colorCode)
+            ? null
+            : images.FirstOrDefault(img =>
+                img.ImageBlank?.Contains($"-{colorCode}_POS") == true)?.ImageBlank;
+
+    private static AdaptedPrintZoneDto AdaptZone(MidoceanPrintingPositionDto pos, string primaryColor)
     {
         // Points are sorted by sequence_no; point 1 = top-left, point 2 = bottom-right.
         var pts = pos.Points.OrderBy(pt => pt.SequenceNo).ToList();
@@ -75,7 +86,10 @@ public class MidoceanProductService : IMidoceanProductService
             .DefaultIfEmpty(0)
             .Max();
 
-        var imageUrl = pos.Images.FirstOrDefault()?.ImageBlank ?? "";
+        // Use the same primary colour as the product image so the shirt colour
+        // stays consistent across all zone tabs.
+        var imageUrl = FindImageForColor(pos.Images, primaryColor)
+                       ?? pos.Images.FirstOrDefault()?.ImageBlank ?? "";
 
         return new AdaptedPrintZoneDto(
             Id:                  pos.PositionId,

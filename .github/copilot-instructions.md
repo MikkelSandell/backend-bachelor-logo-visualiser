@@ -56,7 +56,9 @@ Product (Id, Title, ImagePath, ImageWidth, ImageHeight)
 AdaptedProductDto (Id, Title, ImageUrl, ImageWidth, ImageHeight)
   └── AdaptedPrintZoneDto[] (Id, Name, X, Y, Width, Height,
                               MaxPhysicalWidthMm, MaxPhysicalHeightMm,
-                              AllowedTechniques: string[])
+                              AllowedTechniques: string[], ImageUrl)
+```
+`ImageUrl` per zone is the blank position photo pinned to `item_color_numbers[0]` so all zones show the same colour.
 ```
 
 Technique code mapping: `TR/ST1/SP` → `screen_print`, `E/EM` → `embroidery`,

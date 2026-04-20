@@ -86,8 +86,12 @@ AdaptedProductDto
         ├── Id, Name
         ├── X, Y, Width, Height          ← derived from Midocean point arrays
         ├── MaxPhysicalWidthMm, MaxPhysicalHeightMm
-        └── AllowedTechniques: string[]  ← mapped from Midocean technique codes
+        ├── AllowedTechniques: string[]  ← mapped from Midocean technique codes
+        └── ImageUrl                     ← per-position blank image, pinned to item_color_numbers[0]
 ```
+
+`ImageUrl` on each zone is the blank product photo for that print position (FRONT, BACK, CHEST, etc.)
+using the primary colour from `item_color_numbers[0]`, so all zones show the same colour variant.
 
 Technique code mapping (`MapTechnique()` in `MidoceanProductService`):
 `TR/ST1/SP` → `screen_print`, `E/EM` → `embroidery`, `EN/B` → `engraving`,
