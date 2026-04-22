@@ -11,7 +11,7 @@ public class MidoceanProductService : IMidoceanProductService
 
     public MidoceanProductService(IWebHostEnvironment env)
     {
-        var path = Path.Combine(env.ContentRootPath, "Data", "midocean-top10.json");
+        var path = Path.Combine(env.ContentRootPath, "Data", "Midocean-print-data.json");
         using var stream = File.OpenRead(path);
         var file = JsonSerializer.Deserialize<MidoceanDataFile>(stream);
         _products = file?.Products ?? [];

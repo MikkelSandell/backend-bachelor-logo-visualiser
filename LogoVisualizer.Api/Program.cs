@@ -30,6 +30,11 @@ builder.Services.AddScoped<IPrintZoneRepository, PrintZoneRepository>();
 builder.Services.AddSingleton<IMidoceanProductService, MidoceanProductService>();
 
 // ---------------------------------------------------------------------------
+// Midocean database seeding service (loads JSON into database on startup if needed)
+// ---------------------------------------------------------------------------
+builder.Services.AddScoped<IMidoceanSeederService, MidoceanSeederService>();
+
+// ---------------------------------------------------------------------------
 // JWT Authentication — tokens are issued by the external Master application.
 // Configure Jwt:Issuer, Jwt:Audience and Jwt:Key in appsettings or user-secrets
 // to match the Master app's JWT settings.
@@ -123,6 +128,13 @@ if (app.Environment.IsDevelopment())
     app.UseSwagger();
     app.UseSwaggerUI();
     app.ApplyMigrations();
+
+    // Seed Midocean products from JSON into database if not already seeded
+    using (var scope = app.Services.CreateScope())
+    {
+        var seeder = scope.ServiceProvider.GetRequiredService<IMidoceanSeederService>();
+        await seeder.SeedAsync();
+    }
 }
 
 // Serve uploaded product images and logos through a controlled route
