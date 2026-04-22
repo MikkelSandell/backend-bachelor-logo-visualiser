@@ -11,6 +11,7 @@ public class AppDbContext : DbContext
     public DbSet<PrintZone> PrintZones => Set<PrintZone>();
     public DbSet<PrintTechnique> PrintTechniques => Set<PrintTechnique>();
     public DbSet<PrintZoneTechnique> PrintZoneTechniques => Set<PrintZoneTechnique>();
+    public DbSet<AuditLog> AuditLogs => Set<AuditLog>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

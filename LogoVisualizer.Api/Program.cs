@@ -21,6 +21,7 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 // Repositories
 // ---------------------------------------------------------------------------
 builder.Services.AddScoped<IProductRepository, ProductRepository>();
+builder.Services.AddScoped<IAuditLogRepository, AuditLogRepository>();
 builder.Services.AddScoped<IPrintZoneRepository, PrintZoneRepository>();
 
 // ---------------------------------------------------------------------------
@@ -121,7 +122,7 @@ if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
     app.UseSwaggerUI();
-    // app.ApplyMigrations();  // Uncomment when LocalDB / SQL Server is available
+    app.ApplyMigrations();
 }
 
 // Serve uploaded product images and logos through a controlled route
