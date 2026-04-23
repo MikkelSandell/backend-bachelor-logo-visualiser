@@ -8,46 +8,47 @@ namespace LogoVisualizer.Api.Controllers;
 [Route("api/midocean-products")]
 public class MidoceanProductsController : ControllerBase
 {
-    private readonly IMidoceanProductService _service;
+    private readonly IMidoceanProductService _jsonService;
+    private readonly IProductDataService _productData;
 
-    public MidoceanProductsController(IMidoceanProductService service)
+    public MidoceanProductsController(IMidoceanProductService jsonService, IProductDataService productData)
     {
-        _service = service;
+        _jsonService = jsonService;
+        _productData = productData;
     }
 
-    /// <summary>All 10 Midocean sample products — raw supplier format.</summary>
+    /// <summary>All Midocean sample products — raw supplier format (always from JSON).</summary>
     [HttpGet]
     [ProducesResponseType<IReadOnlyList<MidoceanProductDto>>(StatusCodes.Status200OK)]
-    public IActionResult GetAll() => Ok(_service.GetAll());
+    public IActionResult GetAll() => Ok(_jsonService.GetAll());
 
-    /// <summary>Single Midocean product by master_code — raw supplier format.</summary>
+    /// <summary>Single Midocean product by master_code — raw supplier format (always from JSON).</summary>
     [HttpGet("{masterCode}")]
     [ProducesResponseType<MidoceanProductDto>(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public IActionResult GetByMasterCode(string masterCode)
     {
-        var product = _service.GetByMasterCode(masterCode);
+        var product = _jsonService.GetByMasterCode(masterCode);
         if (product is null) return NotFound(new { error = $"No product found with master_code '{masterCode}'." });
         return Ok(product);
     }
 
     /// <summary>
-    /// All 10 Midocean products adapted to the frontend Product shape
-    /// (id, title, imageUrl, imageWidth, imageHeight, printZones).
-    /// Use this endpoint from the viewer and admin apps.
+    /// All products adapted to the frontend Product shape — DB first, JSON fallback.
     /// </summary>
     [HttpGet("as-products")]
     [ProducesResponseType<IReadOnlyList<AdaptedProductDto>>(StatusCodes.Status200OK)]
-    public IActionResult GetAllAdapted() => Ok(_service.GetAllAdapted());
+    public async Task<IActionResult> GetAllAdapted(CancellationToken ct)
+        => Ok(await _productData.GetAllAdaptedAsync(ct));
 
-    /// <summary>Single Midocean product adapted to the frontend Product shape.</summary>
-    [HttpGet("{masterCode}/as-product")]
+    /// <summary>Single product adapted to the frontend Product shape — DB first, JSON fallback.</summary>
+    [HttpGet("{id}/as-product")]
     [ProducesResponseType<AdaptedProductDto>(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public IActionResult GetAdaptedByMasterCode(string masterCode)
+    public async Task<IActionResult> GetAdaptedById(string id, CancellationToken ct)
     {
-        var product = _service.GetAdaptedByMasterCode(masterCode);
-        if (product is null) return NotFound(new { error = $"No product found with master_code '{masterCode}'." });
+        var product = await _productData.GetAdaptedByIdAsync(id, ct);
+        if (product is null) return NotFound(new { error = $"No product found with id '{id}'." });
         return Ok(product);
     }
 }

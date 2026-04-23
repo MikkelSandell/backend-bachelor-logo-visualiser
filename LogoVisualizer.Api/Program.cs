@@ -35,6 +35,11 @@ builder.Services.AddSingleton<IMidoceanProductService, MidoceanProductService>()
 builder.Services.AddScoped<IMidoceanSeederService, MidoceanSeederService>();
 
 // ---------------------------------------------------------------------------
+// Product data service — serves adapted products from DB with JSON fallback
+// ---------------------------------------------------------------------------
+builder.Services.AddScoped<IProductDataService, ProductDataService>();
+
+// ---------------------------------------------------------------------------
 // JWT Authentication — tokens are issued by the external Master application.
 // Configure Jwt:Issuer, Jwt:Audience and Jwt:Key in appsettings or user-secrets
 // to match the Master app's JWT settings.
@@ -122,6 +127,18 @@ builder.Services.AddSwaggerGen(c =>
 // Build
 // ---------------------------------------------------------------------------
 var app = builder.Build();
+
+// Seed-only mode — used by the Docker seeder container.
+// Applies migrations and seeds the database, then exits without starting the HTTP server.
+if (Environment.GetEnvironmentVariable("SEED_AND_EXIT") == "true")
+{
+    using var seedScope = app.Services.CreateScope();
+    var db = seedScope.ServiceProvider.GetRequiredService<LogoVisualizer.Data.AppDbContext>();
+    db.Database.Migrate();
+    var seeder = seedScope.ServiceProvider.GetRequiredService<IMidoceanSeederService>();
+    await seeder.SeedAsync();
+    return;
+}
 
 if (app.Environment.IsDevelopment())
 {

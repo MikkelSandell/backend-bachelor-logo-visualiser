@@ -19,24 +19,24 @@ services:
       retries: 30
       start_period: 180s
 
-  api:
+  seeder:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: logo-api
+    container_name: logo-seeder
     environment:
-      ASPNETCORE_ENVIRONMENT: Production
+      SEED_AND_EXIT: "true"
       ConnectionStrings__DefaultConnection: "Server=mssql,1433;Database=LogoVisualizer;User Id=sa;Password=YourStrong!Passw0rd;TrustServerCertificate=True;"
       Jwt__Issuer: "MasterApp"
       Jwt__Audience: "LogoVisualizer"
       Jwt__Key: "your-production-jwt-key-minimum-32-characters-long"
-    ports:
-      - "5000:5000"
     depends_on:
-      - mssql
+      mssql:
+        condition: service_healthy
     networks:
       - logo-network
-    restart: unless-stopped
+    restart: no
+
 
 networks:
   logo-network:
