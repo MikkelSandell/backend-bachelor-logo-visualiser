@@ -67,13 +67,10 @@ public class PrintZonesController : ControllerBase
             MaxPhysicalWidthMm = request.MaxPhysicalWidthMm,
             MaxPhysicalHeightMm = request.MaxPhysicalHeightMm,
             MaxColors = request.MaxColors,
+            ImageUrl = request.ImageUrl,
         };
 
-        // Resolve allowed techniques from DB to prevent sending arbitrary IDs
-        var techniques = await _db.PrintTechniques
-            .Where(t => request.AllowedTechniqueIds.Contains(t.Id))
-            .ToListAsync(ct);
-
+        var techniques = await ResolveTechniquesAsync(request, ct);
         zone.AllowedTechniques = techniques
             .Select(t => new PrintZoneTechnique { PrintTechniqueId = t.Id })
             .ToList();
@@ -105,13 +102,11 @@ public class PrintZonesController : ControllerBase
         zone.MaxPhysicalWidthMm = request.MaxPhysicalWidthMm;
         zone.MaxPhysicalHeightMm = request.MaxPhysicalHeightMm;
         zone.MaxColors = request.MaxColors;
+        if (request.ImageUrl is not null) zone.ImageUrl = request.ImageUrl;
 
         // Replace technique associations
         zone.AllowedTechniques.Clear();
-        var techniques = await _db.PrintTechniques
-            .Where(t => request.AllowedTechniqueIds.Contains(t.Id))
-            .ToListAsync(ct);
-
+        var techniques = await ResolveTechniquesAsync(request, ct);
         foreach (var t in techniques)
             zone.AllowedTechniques.Add(new PrintZoneTechnique { PrintZoneId = zone.Id, PrintTechniqueId = t.Id });
 
@@ -130,5 +125,28 @@ public class PrintZonesController : ControllerBase
         if (zone is null || zone.ProductId != productId) return NotFound();
         await _zones.DeleteAsync(id, ct);
         return NoContent();
+    }
+
+    // Resolves PrintTechnique entities from either names ("screen_print" / "Screen Print")
+    // or IDs, with names taking priority.
+    private async Task<List<PrintTechnique>> ResolveTechniquesAsync(CreatePrintZoneRequest request, CancellationToken ct)
+    {
+        var all = await _db.PrintTechniques.ToListAsync(ct);
+
+        if (request.AllowedTechniqueNames.Count > 0)
+        {
+            return request.AllowedTechniqueNames
+                .Select(name =>
+                {
+                    var normalized = name.Replace('_', ' ');
+                    return all.FirstOrDefault(t =>
+                        string.Equals(t.Name, normalized, StringComparison.OrdinalIgnoreCase) ||
+                        string.Equals(t.Name.Replace(" ", "_"), name, StringComparison.OrdinalIgnoreCase));
+                })
+                .OfType<PrintTechnique>()
+                .ToList();
+        }
+
+        return all.Where(t => request.AllowedTechniqueIds.Contains(t.Id)).ToList();
     }
 }

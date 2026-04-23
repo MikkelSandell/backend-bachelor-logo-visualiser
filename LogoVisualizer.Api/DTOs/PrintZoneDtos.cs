@@ -54,9 +54,13 @@ public class CreatePrintZoneRequest
     public decimal MaxPhysicalWidthMm { get; set; }
     public decimal MaxPhysicalHeightMm { get; set; }
     public int? MaxColors { get; set; }
+    public string? ImageUrl { get; set; }
 
-    /// <summary>IDs from the PrintTechniques lookup table (/api/techniques).</summary>
+    /// <summary>IDs from the PrintTechniques lookup table. Use AllowedTechniqueNames instead when calling from the frontend.</summary>
     public List<int> AllowedTechniqueIds { get; set; } = [];
+
+    /// <summary>Technique names (e.g. "screen_print", "Screen Print"). Looked up case-insensitively; takes priority over AllowedTechniqueIds.</summary>
+    public List<string> AllowedTechniqueNames { get; set; } = [];
 }
 
 public class UpdatePrintZoneRequest : CreatePrintZoneRequest { }
