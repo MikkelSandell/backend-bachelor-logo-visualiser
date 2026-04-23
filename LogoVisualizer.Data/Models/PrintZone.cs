@@ -25,5 +25,8 @@ public class PrintZone
     /// <summary>Maximum number of colours allowed. Null means unlimited.</summary>
     public int? MaxColors { get; set; }
 
+    /// <summary>URL of the blank product image for this specific print position (e.g. FRONT vs BACK).</summary>
+    public string? ImageUrl { get; set; }
+
     public ICollection<PrintZoneTechnique> AllowedTechniques { get; set; } = new List<PrintZoneTechnique>();
 }

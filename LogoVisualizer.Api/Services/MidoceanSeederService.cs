@@ -50,11 +50,14 @@ public class MidoceanSeederService : IMidoceanSeederService
 
             foreach (var midoceanProduct in file.Products)
             {
+                var primaryColor = midoceanProduct.ItemColorNumbers.FirstOrDefault() ?? "";
+
                 // Create product
                 var product = new Product
                 {
                     Title = midoceanProduct.MasterCode,
-                    ImagePath = GetFirstImageUrl(midoceanProduct) ?? "",
+                    ImagePath = GetImageForColor(midoceanProduct.PrintingPositions.FirstOrDefault()?.Images ?? [], primaryColor)
+                                ?? GetFirstImageUrl(midoceanProduct) ?? "",
                     ImageWidth = 1000,  // Midocean images are 1000x1000
                     ImageHeight = 1000,
                     CreatedAt = DateTime.UtcNow,
@@ -74,7 +77,9 @@ public class MidoceanSeederService : IMidoceanSeederService
                         Height = GetPointHeight(position),
                         MaxPhysicalWidthMm = (decimal)position.MaxPrintSizeWidth,
                         MaxPhysicalHeightMm = (decimal)position.MaxPrintSizeHeight,
-                        MaxColors = GetMaxColors(position)
+                        MaxColors = GetMaxColors(position),
+                        ImageUrl = GetImageForColor(position.Images, primaryColor)
+                                   ?? position.Images.FirstOrDefault()?.ImageBlank
                     };
 
                     // Link techniques
@@ -114,6 +119,11 @@ public class MidoceanSeederService : IMidoceanSeederService
             .FirstOrDefault()?
             .ImageBlank;
     }
+
+    private static string? GetImageForColor(List<MidoceanPositionImageDto> images, string colorCode) =>
+        string.IsNullOrEmpty(colorCode)
+            ? null
+            : images.FirstOrDefault(img => img.ImageBlank?.Contains($"-{colorCode}_POS") == true)?.ImageBlank;
 
     private static int GetPointX(MidoceanPrintingPositionDto position)
     {
