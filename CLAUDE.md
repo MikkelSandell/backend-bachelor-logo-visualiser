@@ -19,16 +19,18 @@ The project is a **bachelor's thesis** deliverable. Code and documentation are i
 | Layer              | Technology                                        |
 |--------------------|---------------------------------------------------|
 | Web API framework  | ASP.NET Core 10 (controller-based)                |
-| ORM                | Entity Framework Core 10 (not active — no DB yet) |
-| Database           | Microsoft SQL Server — **not in use, no DB installed** |
-| Authentication     | JWT Bearer — tokens issued by *Master* app (wired, not active) |
+| ORM                | Entity Framework Core 10                          |
+| Database           | SQL Server 2022 — running in Docker (`logo-db` container) |
+| Authentication     | JWT Bearer — dev token via `POST /api/auth/dev-token`; production tokens from *Master* app |
 | Rate limiting      | `AspNetCoreRateLimit`                             |
 | Image compositing  | `SixLabors.ImageSharp`                            |
 | API docs           | Swashbuckle / OpenAPI 3                           |
 
 ### Active data source
 
-All product data is currently served from **`LogoVisualizer.Api/Data/midocean-top10.json`** via `MidoceanProductService`. The DB-backed endpoints exist in code but require a database connection to function. `app.ApplyMigrations()` is commented out in `Program.cs`.
+Product data is served from the **SQL Server database** (DB-first) with automatic fallback to **`LogoVisualizer.Api/Data/Midocean-print-data.json`** if the database is unreachable or empty. This is handled by `ProductDataService`. The raw Midocean endpoints (`GET /api/midocean-products`) always read from JSON.
+
+The database is seeded on first run by a Docker `seeder` container (`SEED_AND_EXIT=true`) that applies EF Core migrations and imports all Midocean products with their print zones and per-zone image URLs.
 
 ---
 
@@ -38,13 +40,15 @@ All product data is currently served from **`LogoVisualizer.Api/Data/midocean-to
 LogoVisualizer.sln
 ├── LogoVisualizer.Api          → Web API entry point
 │   ├── Controllers/
-│   │   ├── MidoceanProductsController.cs  ← active (no DB needed)
-│   │   ├── ProductsController.cs          ← DB-backed (requires DB)
-│   │   ├── PrintZonesController.cs        ← DB-backed (requires DB)
-│   │   ├── TechniquesController.cs        ← DB-backed (requires DB)
+│   │   ├── AuthController.cs              ← POST /api/auth/dev-token (Development only)
+│   │   ├── MidoceanProductsController.cs  ← raw JSON endpoints + adapted endpoints (DB-first via ProductDataService)
+│   │   ├── ProductsController.cs          ← DB-backed CRUD
+│   │   ├── PrintZonesController.cs        ← DB-backed zone CRUD (accepts AllowedTechniqueNames)
+│   │   ├── TechniquesController.cs        ← DB-backed techniques read
 │   │   ├── LogoUploadController.cs        ← logo upload
+│   │   ├── FilesController.cs             ← serves uploaded files from uploads/
 │   │   └── ExportController.cs           ← PNG composite
-│   ├── Data/                   → Static data files (midocean-top10.json)
+│   ├── Data/                   → Static data files (Midocean-print-data.json, midocean-top10.json)
 │   ├── DTOs/                   → Request/response record types (incl. AdaptedProductDto)
 │   ├── Extensions/             → IApplicationBuilder extension helpers
 │   ├── Helpers/                → Utility/helper classes
@@ -53,7 +57,7 @@ LogoVisualizer.sln
 │   ├── Services/               → Service interfaces + implementations
 │   └── uploads/                → Runtime file upload storage
 └── LogoVisualizer.Data         → EF Core context, entity models, repositories
-    └── Migrations/             → Created but not yet applied (no DB)
+    └── Migrations/             → Applied — InitialCreate, AddAuditLogTable, AddPrintZoneImageUrl
 ```
 
 `LogoVisualizer.Api` references `LogoVisualizer.Data`.
@@ -62,7 +66,7 @@ LogoVisualizer.sln
 
 ## Data Model
 
-### EF Core entities (DB-backed, not active)
+### EF Core entities (active — SQL Server via Docker)
 
 ```
 Product
@@ -73,6 +77,7 @@ Product
         ├── X, Y, Width, Height          ← pixel coords on product image
         ├── MaxPhysicalWidthMm, MaxPhysicalHeightMm
         ├── MaxColors (nullable)
+        ├── ImageUrl (nullable)          ← blank product photo for this print position
         └── AllowedTechniques[]          ← many-to-many via PrintZoneTechnique
               └── PrintTechnique { Id, Name, Description }
 ```
@@ -102,6 +107,7 @@ Technique code mapping (`MapTechnique()` in `MidoceanProductService`):
 ## Authentication & Authorisation
 
 - **Admin write endpoints** (`POST`, `PUT`, `DELETE`) require `[Authorize]`. JWT tokens come from the external *Master* application — configured via `Jwt:Issuer`, `Jwt:Audience`, `Jwt:Key` in appsettings / user-secrets.
+- **Development shortcut**: `POST /api/auth/dev-token` issues a 1-year JWT signed with the dev key. Only available when `ASPNETCORE_ENVIRONMENT=Development`. The admin frontend (`productApi.ts`) calls this automatically on the first write operation via `ensureToken()`.
 - **Public read and viewer endpoints** have no `[Authorize]` attribute.
 - **Upload and export endpoints** are public but rate-limited via `IpRateLimiting` config.
 
@@ -122,36 +128,53 @@ Technique code mapping (`MapTechnique()` in `MidoceanProductService`):
 
 | File | Purpose |
 |------|---------|
-| `LogoVisualizer.Api/Program.cs` | DI registration, middleware pipeline — `ApplyMigrations()` is commented out |
+| `LogoVisualizer.Api/Program.cs` | DI registration, middleware pipeline — applies migrations + seeds on Development startup; `SEED_AND_EXIT=true` runs seeder-only mode for Docker |
 | `LogoVisualizer.Api/Properties/launchSettings.json` | Forces `ASPNETCORE_ENVIRONMENT=Development`; Swagger always available |
-| `LogoVisualizer.Api/appsettings.Development.json` | LocalDB connection string (for future use), dev JWT key |
+| `LogoVisualizer.Api/appsettings.Development.json` | Connection string pointing to Docker SQL Server (`localhost,1433;Database=LogoVisualizer`), dev JWT key |
+| `docker-compose.yml` | Starts `mssql` (SQL Server 2022) and `seeder` (one-shot migration + seed container) |
+| `Dockerfile` | Multi-stage build for the API; also used by the seeder service |
 | `LogoVisualizer.Data/AppDbContext.cs` | EF model config, index constraints, technique seed data |
 | `LogoVisualizer.Data/Repositories/` | `IProductRepository`, `IPrintZoneRepository` + implementations |
-| `LogoVisualizer.Api/Controllers/MidoceanProductsController.cs` | Active endpoints — raw and adapted Midocean products |
+| `LogoVisualizer.Api/Controllers/AuthController.cs` | `POST /api/auth/dev-token` — issues dev JWT (Development only) |
+| `LogoVisualizer.Api/Controllers/MidoceanProductsController.cs` | Raw JSON endpoints; adapted endpoints delegate to `ProductDataService` (DB-first) |
+| `LogoVisualizer.Api/Controllers/PrintZonesController.cs` | Zone CRUD — accepts `AllowedTechniqueNames` (string names) resolved via `ResolveTechniquesAsync` |
 | `LogoVisualizer.Api/Controllers/ExportController.cs` | PNG composite generation using ImageSharp |
 | `LogoVisualizer.Api/Controllers/LogoUploadController.cs` | Logo file upload; SVG sanitisation is a TODO |
-| `LogoVisualizer.Api/Services/IMidoceanProductService.cs` | Interface — `GetAll()`, `GetByMasterCode()`, `GetAllAdapted()`, `GetAdaptedByMasterCode()` |
-| `LogoVisualizer.Api/Services/MidoceanProductService.cs` | Singleton — loads `midocean-top10.json`, adapts to frontend shape |
-| `LogoVisualizer.Api/Data/midocean-top10.json` | 10 Midocean products extracted from the full feed |
+| `LogoVisualizer.Api/Services/ProductDataService.cs` | `IProductDataService` — queries DB, falls back to JSON on error/empty |
+| `LogoVisualizer.Api/Services/MidoceanProductService.cs` | Singleton — loads `Midocean-print-data.json`, adapts to frontend shape (JSON fallback) |
+| `LogoVisualizer.Api/Services/MidoceanSeederService.cs` | Seeds DB from `Midocean-print-data.json`; idempotent (skips if products exist); stores per-zone `ImageUrl` |
+| `LogoVisualizer.Api/Data/Midocean-print-data.json` | Full Midocean supplier feed used for seeding and JSON fallback |
 | `LogoVisualizer.Api/DTOs/MidoceanDtos.cs` | Raw Midocean DTO types + `AdaptedProductDto` / `AdaptedPrintZoneDto` |
 
 ---
 
 ## Common Tasks
 
-### Run locally
+### Start the database + seed
+```bash
+cd backend-bachelor-logo-visualiser
+docker compose up -d
+# Starts mssql, waits for healthy, then runs seeder (applies migrations + seeds data)
+```
+
+### Run the API locally
 ```bash
 cd LogoVisualizer.Api
 dotnet run
 # Swagger: http://localhost:5000/swagger
+# On first run: applies any pending migrations, skips seeding (data already in DB)
 ```
 
-### Add a migration (for when DB is ready)
+### Wipe and re-seed from scratch
+```bash
+docker compose down -v   # destroys the sql_data volume
+docker compose build     # rebuild seeder image if code changed
+docker compose up -d     # fresh DB + seed
+```
+
+### Add an EF Core migration
 ```bash
 dotnet ef migrations add <Name> \
-  --project LogoVisualizer.Data \
-  --startup-project LogoVisualizer.Api
-dotnet ef database update \
   --project LogoVisualizer.Data \
   --startup-project LogoVisualizer.Api
 ```
@@ -166,11 +189,9 @@ dotnet user-secrets set "Jwt:Key" "<value>"
 
 ## Known TODOs / Open Items
 
-- **No database**: `app.ApplyMigrations()` is commented out in `Program.cs`. Migrations exist under `LogoVisualizer.Data/Migrations/` — uncomment when LocalDB or SQL Server is available.
 - **Image dimensions assumed**: Midocean CDN images are assumed to be 1000×1000 px. Actual dimensions should be detected or fetched if they differ.
 - **SVG sanitisation**: `LogoUploadController` logs a warning but does not yet strip `<script>` tags from SVG uploads. Add an SVG sanitiser before production.
-- **Auth integration with Master**: The JWT config is set up generically. Once you have the Master app's actual issuer/audience/key, set those values in user-secrets and confirm token validation works end-to-end.
-- **File serving route**: Uploaded files are stored under `uploads/` but there is no `/api/files/` controller yet. Add a `FilesController` that serves files from the upload directory with correct content-type headers.
+- **Auth integration with Master**: Replace the dev JWT config with the actual Master application issuer/audience/key. The `dev-token` endpoint must not be exposed in production.
 - **PDF export** (nice-to-have): A multi-page PDF with front/back side is not yet implemented.
 
 ---
