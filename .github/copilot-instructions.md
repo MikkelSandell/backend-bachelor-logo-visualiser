@@ -8,7 +8,7 @@
 
 This is a **bachelor's thesis** project. Code and docs are in English; UI strings are in Danish.
 
-**Current data source**: No database is in use. All product data is served from `LogoVisualizer.Api/Data/midocean-top10.json` via `MidoceanProductService`. The DB-backed endpoints exist in code but require a database connection. `app.ApplyMigrations()` is commented out in `Program.cs`.
+**Current data source**: SQL Server 2022 via Docker (`docker compose up -d`). EF Core migrations are applied automatically on startup. `MidoceanSeederService` seeds all products from `Midocean-print-data.json` on first run (idempotent). The backend falls back to the JSON file if the DB is unreachable. `ProductDataService` handles this DB-first / JSON-fallback logic. Zone CRUD (`PrintZonesController`) writes directly to the DB.
 
 ---
 
@@ -33,8 +33,8 @@ LogoVisualizer.sln
 ## Tech stack
 
 - **Runtime**: .NET 10, ASP.NET Core (controller-based, not Minimal API)
-- **ORM**: Entity Framework Core 10 — wired but not active (no DB)
-- **Auth**: JWT Bearer (`Microsoft.AspNetCore.Authentication.JwtBearer`) — tokens from external *Master* app (wired, not active)
+- **ORM**: Entity Framework Core 10 — active with SQL Server 2022 (Docker)
+- **Auth**: JWT Bearer (`Microsoft.AspNetCore.Authentication.JwtBearer`) — dev token via `POST /api/auth/dev-token` in Development; production tokens from external *Master* app
 - **Rate limiting**: `AspNetCoreRateLimit`
 - **Image processing**: `SixLabors.ImageSharp`
 - **API docs**: Swashbuckle (OpenAPI 3 / Swagger) — available at `http://localhost:5000/swagger`
@@ -43,11 +43,11 @@ LogoVisualizer.sln
 
 ## Data model summary
 
-### EF Core entities (DB-backed, not active)
+### EF Core entities (active — SQL Server via Docker)
 ```
 Product (Id, Title, ImagePath, ImageWidth, ImageHeight)
   └── PrintZone[] (Id, ProductId, Name, X, Y, Width, Height,
-                   MaxPhysicalWidthMm, MaxPhysicalHeightMm, MaxColors)
+                   MaxPhysicalWidthMm, MaxPhysicalHeightMm, MaxColors, ImageUrl)
         └── PrintZoneTechnique[] → PrintTechnique (Id, Name)
 ```
 
