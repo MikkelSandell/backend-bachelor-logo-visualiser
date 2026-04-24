@@ -130,7 +130,7 @@ Technique code mapping (`MapTechnique()` in `MidoceanProductService`):
 |------|---------|
 | `LogoVisualizer.Api/Program.cs` | DI registration, middleware pipeline — applies migrations + seeds on Development startup; `SEED_AND_EXIT=true` runs seeder-only mode for Docker |
 | `LogoVisualizer.Api/Properties/launchSettings.json` | Forces `ASPNETCORE_ENVIRONMENT=Development`; Swagger always available |
-| `LogoVisualizer.Api/appsettings.Development.json` | Connection string pointing to Docker SQL Server (`localhost,1433;Database=LogoVisualizer`), dev JWT key |
+| `LogoVisualizer.Api/appsettings.Development.json` | Connection string pointing to Docker SQL Server (`localhost,11433;Database=LogoVisualizer`), dev JWT key |
 | `docker-compose.yml` | Starts `mssql` (SQL Server 2022) and `seeder` (one-shot migration + seed container) |
 | `Dockerfile` | Multi-stage build for the API; also used by the seeder service |
 | `LogoVisualizer.Data/AppDbContext.cs` | EF model config, index constraints, technique seed data |
