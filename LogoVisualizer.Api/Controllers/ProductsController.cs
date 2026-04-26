@@ -1,8 +1,10 @@
 using LogoVisualizer.Api.DTOs;
+using LogoVisualizer.Data;
 using LogoVisualizer.Data.Models;
 using LogoVisualizer.Data.Repositories;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using System.Text.Json;
 
 namespace LogoVisualizer.Api.Controllers;
@@ -12,11 +14,13 @@ namespace LogoVisualizer.Api.Controllers;
 public class ProductsController : ControllerBase
 {
     private readonly IProductRepository _products;
+    private readonly AppDbContext _db;
     private readonly IWebHostEnvironment _env;
 
-    public ProductsController(IProductRepository products, IWebHostEnvironment env)
+    public ProductsController(IProductRepository products, AppDbContext db, IWebHostEnvironment env)
     {
         _products = products;
+        _db = db;
         _env = env;
     }
 
@@ -86,12 +90,17 @@ public class ProductsController : ControllerBase
     {
         if (!ModelState.IsValid) return ValidationProblem(ModelState);
 
-        // Load existing product
-        var product = await _products.GetByIdWithZonesAsync(id, ct);
+        // Load tracked entity graph so zone create/update/delete operations persist correctly.
+        var product = await _db.Products
+            .Include(p => p.PrintZones)
+                .ThenInclude(z => z.AllowedTechniques)
+            .FirstOrDefaultAsync(p => p.Id == id, ct);
+
         if (product is null) return NotFound(new { error = "Product not found." });
 
         // Defensive: ensure request has zones list (never null)
         var incomingZones = request.PrintZones ?? [];
+        var allTechniques = await _db.PrintTechniques.AsNoTracking().ToListAsync(ct);
 
         // Defensive: ensure product has zones list (never null)
         if (product.PrintZones == null) 
@@ -114,12 +123,23 @@ public class ProductsController : ControllerBase
 
         // Collect all incoming zone IDs (exclude new zones with id=0)
         var incomingZoneIds = incomingZones.Where(z => z.Id > 0).Select(z => z.Id).ToHashSet();
+        var existingZoneIds = product.PrintZones.Select(z => z.Id).ToHashSet();
+
+        // Reject updates that reference zone IDs that do not belong to this product.
+        var unknownZoneIds = incomingZoneIds.Where(idFromRequest => !existingZoneIds.Contains(idFromRequest)).ToList();
+        if (unknownZoneIds.Count > 0)
+        {
+            return BadRequest(new ValidationErrorResponse
+            {
+                Errors = unknownZoneIds.Select(zoneId => $"Zone ID {zoneId} does not belong to product {id}.").ToList()
+            });
+        }
 
         // STEP 1: Delete zones not in incoming request
         var zonesToDelete = product.PrintZones.Where(z => !incomingZoneIds.Contains(z.Id)).ToList();
         foreach (var zone in zonesToDelete)
         {
-            product.PrintZones.Remove(zone);
+            _db.PrintZones.Remove(zone);
         }
 
         // STEP 2: Update or create zones
@@ -140,12 +160,35 @@ public class ProductsController : ControllerBase
                     existingZone.MaxPhysicalWidthMm = incomingZone.MaxPhysicalWidthMm;
                     existingZone.MaxPhysicalHeightMm = incomingZone.MaxPhysicalHeightMm;
                     existingZone.MaxColors = incomingZone.MaxColors;
-                    // Note: AllowedTechniques are separate lookup entities - not synced here
+
+                    existingZone.AllowedTechniques.Clear();
+                    var techniqueIds = incomingZone.AllowedTechniques
+                        .Select(name => ResolveTechniqueByName(allTechniques, name))
+                        .OfType<PrintTechnique>()
+                        .Select(t => t.Id)
+                        .Distinct()
+                        .ToList();
+
+                    foreach (var techniqueId in techniqueIds)
+                    {
+                        existingZone.AllowedTechniques.Add(new PrintZoneTechnique
+                        {
+                            PrintZoneId = existingZone.Id,
+                            PrintTechniqueId = techniqueId
+                        });
+                    }
                 }
             }
             else
             {
                 // Create new zone (id=0 means new)
+                var techniqueIds = incomingZone.AllowedTechniques
+                    .Select(name => ResolveTechniqueByName(allTechniques, name))
+                    .OfType<PrintTechnique>()
+                    .Select(t => t.Id)
+                    .Distinct()
+                    .ToList();
+
                 var newZone = new PrintZone
                 {
                     Name = incomingZone.Name ?? "Unnamed Zone",  // Fallback name
@@ -156,14 +199,18 @@ public class ProductsController : ControllerBase
                     MaxPhysicalWidthMm = incomingZone.MaxPhysicalWidthMm,
                     MaxPhysicalHeightMm = incomingZone.MaxPhysicalHeightMm,
                     MaxColors = incomingZone.MaxColors,
-                    AllowedTechniques = []  // Initialize empty list
+                    AllowedTechniques = techniqueIds
+                        .Select(techniqueId => new PrintZoneTechnique { PrintTechniqueId = techniqueId })
+                        .ToList()
                 };
+
                 product.PrintZones.Add(newZone);
             }
         }
 
         // STEP 3: Save updated product
-        await _products.UpdateAsync(product, ct);
+        product.UpdatedAt = DateTime.UtcNow;
+        await _db.SaveChangesAsync(ct);
 
         // STEP 4: Reload and return full updated product
         var updated = await _products.GetByIdWithZonesAsync(id, ct);
@@ -247,22 +294,37 @@ public class ProductsController : ControllerBase
         if (!file.FileName.EndsWith(".json", StringComparison.OrdinalIgnoreCase))
             return BadRequest(new { error = "Only .json files are accepted." });
 
-        ImportProductDto[]? imports;
+        List<ImportProductDto>? imports;
         try
         {
             await using var stream = file.OpenReadStream();
-            imports = await JsonSerializer.DeserializeAsync<ImportProductDto[]>(
-                stream,
-                new JsonSerializerOptions { PropertyNameCaseInsensitive = true },
-                ct);
+            using var document = await JsonDocument.ParseAsync(stream, cancellationToken: ct);
+
+            imports = document.RootElement.ValueKind switch
+            {
+                JsonValueKind.Array => JsonSerializer.Deserialize<List<ImportProductDto>>(
+                    document.RootElement.GetRawText(),
+                    new JsonSerializerOptions { PropertyNameCaseInsensitive = true }),
+
+                JsonValueKind.Object =>
+                [
+                    JsonSerializer.Deserialize<ImportProductDto>(
+                        document.RootElement.GetRawText(),
+                        new JsonSerializerOptions { PropertyNameCaseInsensitive = true })!
+                ],
+
+                _ => null
+            };
         }
         catch (JsonException ex)
         {
             return BadRequest(new { error = "Invalid JSON format.", detail = ex.Message });
         }
 
-        if (imports is null || imports.Length == 0)
+        if (imports is null || imports.Count == 0)
             return BadRequest(new { error = "No products found in the uploaded file." });
+
+        var allTechniques = await _db.PrintTechniques.AsNoTracking().ToListAsync(ct);
 
         var created = new List<int>();
         foreach (var dto in imports)
@@ -273,7 +335,24 @@ public class ProductsController : ControllerBase
                 ImagePath = dto.ImageUrl ?? string.Empty,
                 ImageWidth = dto.ImageWidth,
                 ImageHeight = dto.ImageHeight,
+                PrintZones = dto.PrintZones.Select(z => new PrintZone
+                {
+                    Name = z.Name,
+                    X = z.X,
+                    Y = z.Y,
+                    Width = z.Width,
+                    Height = z.Height,
+                    MaxPhysicalWidthMm = z.MaxPhysicalWidthMm,
+                    MaxPhysicalHeightMm = z.MaxPhysicalHeightMm,
+                    MaxColors = z.MaxColors,
+                    AllowedTechniques = z.AllowedTechniques
+                        .Select(name => ResolveTechniqueByName(allTechniques, name))
+                        .OfType<PrintTechnique>()
+                        .Select(t => new PrintZoneTechnique { PrintTechniqueId = t.Id })
+                        .ToList()
+                }).ToList()
             };
+
             var saved = await _products.CreateAsync(product, ct);
             created.Add(saved.Id);
         }
@@ -341,5 +420,13 @@ public class ProductsController : ControllerBase
         await file.CopyToAsync(destination, ct);
 
         return $"uploads/products/{fileName}";
+    }
+
+    private static PrintTechnique? ResolveTechniqueByName(List<PrintTechnique> allTechniques, string name)
+    {
+        var normalized = name.Replace('_', ' ');
+        return allTechniques.FirstOrDefault(t =>
+            string.Equals(t.Name, normalized, StringComparison.OrdinalIgnoreCase) ||
+            string.Equals(t.Name.Replace(" ", "_"), name, StringComparison.OrdinalIgnoreCase));
     }
 }
