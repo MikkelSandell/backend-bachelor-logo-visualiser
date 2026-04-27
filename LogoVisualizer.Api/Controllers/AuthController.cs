@@ -23,7 +23,12 @@ public class AuthController : ControllerBase
     /// Issues a long-lived JWT for the admin tool.
     /// Only available when ASPNETCORE_ENVIRONMENT=Development.
     /// </summary>
+    /// <returns>A signed JWT valid for 1 year with the "admin" role claim.</returns>
+    /// <response code="200">Returns the signed JWT token.</response>
+    /// <response code="404">Endpoint is disabled outside of the Development environment.</response>
     [HttpPost("dev-token")]
+    [ProducesResponseType(typeof(object), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
     public IActionResult DevToken()
     {
         if (!_env.IsDevelopment())

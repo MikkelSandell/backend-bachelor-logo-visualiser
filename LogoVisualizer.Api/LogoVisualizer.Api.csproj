@@ -6,6 +6,9 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <!-- Used by dotnet user-secrets for local dev secrets -->
     <UserSecretsId>logovisualizer-api-secrets</UserSecretsId>
+    <!-- Emit XML doc file so Swashbuckle can pick up /// <summary> comments -->
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <NoWarn>$(NoWarn);1591</NoWarn>
   </PropertyGroup>
 
   <ItemGroup>
