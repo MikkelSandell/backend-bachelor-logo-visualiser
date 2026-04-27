@@ -55,7 +55,7 @@ backend-bachelor-logo-visualiser/
     │   ├── ProductRepository.cs
     │   ├── IPrintZoneRepository.cs
     │   └── PrintZoneRepository.cs
-    ├── Migrations/                          # EF Core migrations (created, not yet applied)
+    ├── Migrations/                          # EF Core migrations (applied automatically on startup)
     └── AppDbContext.cs
 ```
 

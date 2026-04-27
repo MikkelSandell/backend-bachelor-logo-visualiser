@@ -47,7 +47,7 @@ LogoVisualizer.sln
 │   │   ├── TechniquesController.cs        ← DB-backed techniques read
 │   │   ├── LogoUploadController.cs        ← logo upload
 │   │   ├── FilesController.cs             ← serves uploaded files from uploads/
-│   │   └── ExportController.cs           ← PNG composite
+│   │   └── ExportController.cs            ← PNG composite
 │   ├── Data/                   → Static data files (Midocean-print-data.json, midocean-top10.json)
 │   ├── DTOs/                   → Request/response record types (incl. AdaptedProductDto)
 │   ├── Extensions/             → IApplicationBuilder extension helpers
@@ -57,7 +57,7 @@ LogoVisualizer.sln
 │   ├── Services/               → Service interfaces + implementations
 │   └── uploads/                → Runtime file upload storage
 └── LogoVisualizer.Data         → EF Core context, entity models, repositories
-    └── Migrations/             → Applied — InitialCreate, AddAuditLogTable, AddPrintZoneImageUrl
+    └── Migrations/             → Applied — InitialCreate, AddPrintZoneImageUrl, RemoveAuditLogAndFixDecimalPrecision
 ```
 
 `LogoVisualizer.Api` references `LogoVisualizer.Data`.
