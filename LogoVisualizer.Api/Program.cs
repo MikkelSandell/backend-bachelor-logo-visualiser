@@ -21,7 +21,6 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 // Repositories
 // ---------------------------------------------------------------------------
 builder.Services.AddScoped<IProductRepository, ProductRepository>();
-builder.Services.AddScoped<IAuditLogRepository, AuditLogRepository>();
 builder.Services.AddScoped<IPrintZoneRepository, PrintZoneRepository>();
 
 // ---------------------------------------------------------------------------

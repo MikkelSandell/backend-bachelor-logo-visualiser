@@ -11,7 +11,6 @@ public class AppDbContext : DbContext
     public DbSet<PrintZone> PrintZones => Set<PrintZone>();
     public DbSet<PrintTechnique> PrintTechniques => Set<PrintTechnique>();
     public DbSet<PrintZoneTechnique> PrintZoneTechniques => Set<PrintZoneTechnique>();
-    public DbSet<AuditLog> AuditLogs => Set<AuditLog>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -39,6 +38,12 @@ public class AppDbContext : DbContext
 
         modelBuilder.Entity<PrintZone>()
             .Property(pz => pz.Name).HasMaxLength(200).IsRequired();
+
+        modelBuilder.Entity<PrintZone>()
+            .Property(pz => pz.MaxPhysicalWidthMm).HasPrecision(10, 2);
+
+        modelBuilder.Entity<PrintZone>()
+            .Property(pz => pz.MaxPhysicalHeightMm).HasPrecision(10, 2);
 
         modelBuilder.Entity<PrintTechnique>()
             .Property(pt => pt.Name).HasMaxLength(200).IsRequired();
