@@ -24,8 +24,27 @@ public class ZonePlacement
 }
 
 /// <summary>
-/// Export request for the viewer app. Supports one or more logos across multiple
-/// print zones, all composited onto a single product-side image.
+/// One text item placed in a print zone, part of a multi-element export request.
+/// </summary>
+public class TextPlacement
+{
+    public required string ZoneId { get; set; }
+    public required string Text { get; set; }
+
+    /// <summary>Position in product-image pixels (top-left of the text baseline).</summary>
+    public int X { get; set; }
+    public int Y { get; set; }
+
+    /// <summary>Font size in product-image pixels.</summary>
+    public int FontSize { get; set; } = 24;
+
+    /// <summary>CSS hex color string, e.g. "#ff0000".</summary>
+    public string Color { get; set; } = "#000000";
+}
+
+/// <summary>
+/// Export request for the viewer app. Supports one or more logos and/or text items
+/// across multiple print zones, all composited onto a single product-side image.
 /// </summary>
 public class ExportPngRequest
 {
@@ -37,5 +56,9 @@ public class ExportPngRequest
     /// </summary>
     public required string BackgroundImageUrl { get; set; }
 
-    public required List<ZonePlacement> Placements { get; set; }
+    /// <summary>Logo placements — may be empty if only text is used.</summary>
+    public List<ZonePlacement> Placements { get; set; } = [];
+
+    /// <summary>Text placements — may be empty if only logos are used.</summary>
+    public List<TextPlacement> TextPlacements { get; set; } = [];
 }

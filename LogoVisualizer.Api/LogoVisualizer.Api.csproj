@@ -14,12 +14,13 @@
   <ItemGroup>
     <!-- JWT authentication — tokens issued by the Master application -->
     <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="10.0.0" />
+    <PackageReference Include="SixLabors.ImageSharp.Drawing" Version="2.1.7" />
 
     <!-- OpenAPI / Swagger docs (auto-generated from controllers) -->
     <PackageReference Include="Swashbuckle.AspNetCore" Version="6.5.0" />
 
     <!-- Server-side image compositing for PNG export -->
-    <PackageReference Include="SixLabors.ImageSharp" Version="3.1.5" />
+    <PackageReference Include="SixLabors.ImageSharp" Version="3.1.11" />
 
     <!-- IP rate limiting for public viewer/upload endpoints -->
     <PackageReference Include="AspNetCoreRateLimit" Version="5.0.0" />

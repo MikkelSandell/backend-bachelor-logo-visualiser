@@ -1,7 +1,9 @@
 using LogoVisualizer.Api.DTOs;
 using LogoVisualizer.Api.Services;
 using Microsoft.AspNetCore.Mvc;
+using SixLabors.Fonts;
 using SixLabors.ImageSharp;
+using SixLabors.ImageSharp.Drawing.Processing;
 using SixLabors.ImageSharp.Processing;
 
 namespace LogoVisualizer.Api.Controllers;
@@ -39,8 +41,9 @@ public class ExportController : ControllerBase
     {
         if (!ModelState.IsValid) return ValidationProblem(ModelState);
 
-        if (request.Placements is null || request.Placements.Count == 0)
-            return BadRequest(new { error = "At least one zone placement is required." });
+        if ((request.Placements is null || request.Placements.Count == 0)
+            && (request.TextPlacements is null || request.TextPlacements.Count == 0))
+            return BadRequest(new { error = "At least one logo or text placement is required." });
 
         if (string.IsNullOrWhiteSpace(request.BackgroundImageUrl))
             return BadRequest(new { error = "BackgroundImageUrl is required." });
@@ -51,16 +54,17 @@ public class ExportController : ControllerBase
             return NotFound(new { error = $"Product '{request.ProductId}' not found." });
 
         var logoDir = Path.Combine(_env.ContentRootPath, "uploads", "logos");
-        if (!Directory.Exists(logoDir))
-            return BadRequest(new { error = "No logos have been uploaded yet." });
 
-        // Resolve and validate every placement before touching the image
+        // Resolve and validate every logo placement before touching the image
         var resolved = new List<(string logoPath, ZonePlacement p)>();
-        foreach (var placement in request.Placements)
+        foreach (var placement in request.Placements ?? [])
         {
             var zone = product.PrintZones.FirstOrDefault(z => z.Id == placement.ZoneId);
             if (zone is null)
                 return NotFound(new { error = $"Zone '{placement.ZoneId}' not found." });
+
+            if (!Directory.Exists(logoDir))
+                return BadRequest(new { error = "No logos have been uploaded yet." });
 
             var logoFiles = Directory.GetFiles(logoDir, $"{placement.LogoId}.*");
             if (logoFiles.Length == 0)
@@ -94,6 +98,44 @@ public class ExportController : ControllerBase
                 logoImage.Mutate(ctx => ctx.Resize(placement.LogoWidth, placement.LogoHeight));
                 productImage.Mutate(ctx =>
                     ctx.DrawImage(logoImage, new Point(placement.LogoX, placement.LogoY), 1f));
+            }
+
+            // Render text placements
+            if (request.TextPlacements is { Count: > 0 })
+            {
+                // Resolve font once — prefer Arial, fall back to any available system font
+                FontFamily? fontFamily = null;
+                if (!SystemFonts.TryGet("Arial", out var arialFamily))
+                {
+                    var fallback = SystemFonts.Families.FirstOrDefault();
+                    if (fallback != default) fontFamily = fallback;
+                }
+                else
+                {
+                    fontFamily = arialFamily;
+                }
+
+                if (fontFamily is not null)
+                {
+                    foreach (var tp in request.TextPlacements)
+                    {
+                        if (string.IsNullOrWhiteSpace(tp.Text)) continue;
+                        var fontSize = Math.Max(8f, tp.FontSize);
+                        var font = fontFamily.Value.CreateFont(fontSize, FontStyle.Regular);
+                        if (!Color.TryParse(tp.Color, out var textColor))
+                            textColor = Color.Black;
+
+                        var textOptions = new RichTextOptions(font)
+                        {
+                            Origin = new PointF(tp.X, tp.Y),
+                        };
+                        productImage.Mutate(ctx => ctx.DrawText(textOptions, tp.Text, textColor));
+                    }
+                }
+                else
+                {
+                    _logger.LogWarning("No system fonts found — text placements skipped.");
+                }
             }
 
             var output = new MemoryStream();
