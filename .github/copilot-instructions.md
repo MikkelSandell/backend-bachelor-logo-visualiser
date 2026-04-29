@@ -36,7 +36,7 @@ LogoVisualizer.sln
 - **ORM**: Entity Framework Core 10 — active with SQL Server 2022 (Docker)
 - **Auth**: JWT Bearer (`Microsoft.AspNetCore.Authentication.JwtBearer`) — dev token via `POST /api/auth/dev-token` in Development; production tokens from external *Master* app
 - **Rate limiting**: `AspNetCoreRateLimit`
-- **Image processing**: `SixLabors.ImageSharp`
+- **Image processing**: `SixLabors.ImageSharp` 3.1.11 — logo overlay; `SixLabors.ImageSharp.Drawing` 2.1.7 — text rendering via system fonts (`Arial` preferred, any installed font as fallback)
 - **API docs**: Swashbuckle (OpenAPI 3 / Swagger) — available at `http://localhost:5000/swagger`
 
 ---
@@ -98,6 +98,18 @@ Technique code mapping: `TR/ST1/SP` → `screen_print`, `E/EM` → `embroidery`,
 - `GET /api/midocean-products/{masterCode}/as-product` — single adapted product
 
 These are the primary endpoints used by the frontend. Do not modify the JSON file directly — re-extract from `Midocean-print-data.json` in the project root if data needs updating.
+
+---
+
+## Export endpoint — key facts
+
+`POST /api/export/png` accepts `ExportPngRequest`:
+- `productId` — numeric DB ID or Midocean master code (resolved via `IProductDataService`)
+- `backgroundImageUrl` — full URL of the side image, provided by the frontend
+- `placements[]` — list of `ZonePlacement { zoneId, logoId, logoX, logoY, logoWidth, logoHeight }`
+- `textPlacements[]` — list of `TextPlacement { zoneId, text, x, y, fontSize, color }`
+
+Both lists may be empty independently. At least one combined placement is required. Logos are composited first, then text is rendered on top using system fonts.
 
 ---
 

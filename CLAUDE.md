@@ -23,7 +23,8 @@ The project is a **bachelor's thesis** deliverable. Code and documentation are i
 | Database           | SQL Server 2022 — running in Docker (`logo-db` container) |
 | Authentication     | JWT Bearer — dev token via `POST /api/auth/dev-token`; production tokens from *Master* app |
 | Rate limiting      | `AspNetCoreRateLimit`                             |
-| Image compositing  | `SixLabors.ImageSharp`                            |
+| Image compositing  | `SixLabors.ImageSharp` 3.1.11 — logo overlay      |
+| Text rendering     | `SixLabors.ImageSharp.Drawing` 2.1.7 — text-on-image via system fonts |
 | API docs           | Swashbuckle / OpenAPI 3                           |
 
 ### Active data source
@@ -138,7 +139,8 @@ Technique code mapping (`MapTechnique()` in `MidoceanProductService`):
 | `LogoVisualizer.Api/Controllers/AuthController.cs` | `POST /api/auth/dev-token` — issues dev JWT (Development only) |
 | `LogoVisualizer.Api/Controllers/MidoceanProductsController.cs` | Raw JSON endpoints; adapted endpoints delegate to `ProductDataService` (DB-first) |
 | `LogoVisualizer.Api/Controllers/PrintZonesController.cs` | Zone CRUD — accepts `AllowedTechniqueNames` (string names) resolved via `ResolveTechniquesAsync` |
-| `LogoVisualizer.Api/Controllers/ExportController.cs` | PNG composite generation using ImageSharp |
+| `LogoVisualizer.Api/Controllers/ExportController.cs` | PNG composite — accepts `ExportPngRequest` with a `placements[]` (logo) list and a `textPlacements[]` list; composites all onto the caller-supplied `backgroundImageUrl`; uses `IProductDataService` (supports DB IDs and Midocean master codes) |
+| `LogoVisualizer.Api/DTOs/UploadExportDtos.cs` | `ZonePlacement`, `TextPlacement`, `ExportPngRequest` (replaces old single-zone `ExportPngRequestMidocean`) |
 | `LogoVisualizer.Api/Controllers/LogoUploadController.cs` | Logo file upload; SVG sanitisation is a TODO |
 | `LogoVisualizer.Api/Services/ProductDataService.cs` | `IProductDataService` — queries DB, falls back to JSON on error/empty |
 | `LogoVisualizer.Api/Services/MidoceanProductService.cs` | Singleton — loads `Midocean-print-data.json`, adapts to frontend shape (JSON fallback) |
