@@ -21,7 +21,7 @@ public record PrintZoneDto(
     decimal MaxPhysicalWidthMm,
     decimal MaxPhysicalHeightMm,
     int? MaxColors,
-    List<PrintTechniqueDto> AllowedTechniques)
+    List<string> AllowedTechniques)
 {
     public static PrintZoneDto FromEntity(PrintZone z) =>
         new(
@@ -34,9 +34,9 @@ public record PrintZoneDto(
             z.MaxPhysicalWidthMm,
             z.MaxPhysicalHeightMm,
             z.MaxColors,
-            z.AllowedTechniques
-                .Select(pzt => PrintTechniqueDto.FromEntity(pzt.PrintTechnique))
-                .ToList()
+            z.AllowedTechniques?
+                .Select(pzt => pzt.PrintTechnique.Name)
+                .ToList() ?? []
         );
 }
 

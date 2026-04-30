@@ -51,15 +51,14 @@ public class AppDbContext : DbContext
         modelBuilder.Entity<PrintTechnique>()
             .HasIndex(pt => pt.Name).IsUnique();
 
-        // Seed the standard print techniques
+        // Seed the standard print techniques using slug names that match frontend + Midocean mapping
         modelBuilder.Entity<PrintTechnique>().HasData(
-            new PrintTechnique { Id = 1, Name = "Screen Print",  Description = "Silkscreen/serigrafi-tryk" },
-            new PrintTechnique { Id = 2, Name = "Embroidery",    Description = "Broderi" },
-            new PrintTechnique { Id = 3, Name = "Sublimation",   Description = "Sublimationstryk (kræver lyst syntetisk stof)" },
-            new PrintTechnique { Id = 4, Name = "Engraving",     Description = "Laser- eller mekanisk gravering" },
-            new PrintTechnique { Id = 5, Name = "DTG",           Description = "Direct-to-garment tryk" },
-            new PrintTechnique { Id = 6, Name = "Pad Print",     Description = "Tampontryk — velegnet til små flader" },
-            new PrintTechnique { Id = 7, Name = "Digital Print", Description = "Digitalt tryk / inkjet" }
+            new PrintTechnique { Id = 1, Name = "screen_print",  Description = "Silkscreen/serigrafi-tryk" },
+            new PrintTechnique { Id = 2, Name = "embroidery",    Description = "Broderi" },
+            new PrintTechnique { Id = 3, Name = "sublimation",   Description = "Sublimationstryk (kræver lyst syntetisk stof)" },
+            new PrintTechnique { Id = 4, Name = "engraving",     Description = "Laser- eller mekanisk gravering" },
+            new PrintTechnique { Id = 5, Name = "digital_print", Description = "Digitalt tryk / inkjet" },
+            new PrintTechnique { Id = 6, Name = "pad_print",     Description = "Tampontryk — velegnet til små flader" }
         );
     }
 }

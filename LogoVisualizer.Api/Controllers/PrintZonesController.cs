@@ -70,8 +70,11 @@ public class PrintZonesController : ControllerBase
             ImageUrl = request.ImageUrl,
         };
 
-        var techniques = await ResolveTechniquesAsync(request, ct);
-        zone.AllowedTechniques = techniques
+        var resolution = await ResolveTechniquesAsync(request, ct);
+        if (resolution.Errors.Count > 0)
+            return BadRequest(new ValidationErrorResponse { Errors = resolution.Errors });
+
+        zone.AllowedTechniques = resolution.Techniques
             .Select(t => new PrintZoneTechnique { PrintTechniqueId = t.Id })
             .ToList();
 
@@ -106,8 +109,11 @@ public class PrintZonesController : ControllerBase
 
         // Replace technique associations
         zone.AllowedTechniques.Clear();
-        var techniques = await ResolveTechniquesAsync(request, ct);
-        foreach (var t in techniques)
+        var resolution = await ResolveTechniquesAsync(request, ct);
+        if (resolution.Errors.Count > 0)
+            return BadRequest(new ValidationErrorResponse { Errors = resolution.Errors });
+
+        foreach (var t in resolution.Techniques)
             zone.AllowedTechniques.Add(new PrintZoneTechnique { PrintZoneId = zone.Id, PrintTechniqueId = t.Id });
 
         await _zones.UpdateAsync(zone, ct);
@@ -127,26 +133,42 @@ public class PrintZonesController : ControllerBase
         return NoContent();
     }
 
-    // Resolves PrintTechnique entities from either names ("screen_print" / "Screen Print")
-    // or IDs, with names taking priority.
-    private async Task<List<PrintTechnique>> ResolveTechniquesAsync(CreatePrintZoneRequest request, CancellationToken ct)
+    // Resolves PrintTechnique entities by exact slug name match (e.g. "screen_print").
+    // Falls back to ID lookup if no names provided.
+    private async Task<(List<PrintTechnique> Techniques, List<string> Errors)> ResolveTechniquesAsync(CreatePrintZoneRequest request, CancellationToken ct)
     {
         var all = await _db.PrintTechniques.ToListAsync(ct);
 
         if (request.AllowedTechniqueNames.Count > 0)
         {
-            return request.AllowedTechniqueNames
-                .Select(name =>
+            var errors = new List<string>();
+            var techniques = new List<PrintTechnique>();
+
+            foreach (var rawName in request.AllowedTechniqueNames)
+            {
+                var name = rawName?.Trim() ?? string.Empty;
+                if (string.IsNullOrWhiteSpace(name))
                 {
-                    var normalized = name.Replace('_', ' ');
-                    return all.FirstOrDefault(t =>
-                        string.Equals(t.Name, normalized, StringComparison.OrdinalIgnoreCase) ||
-                        string.Equals(t.Name.Replace(" ", "_"), name, StringComparison.OrdinalIgnoreCase));
-                })
-                .OfType<PrintTechnique>()
-                .ToList();
+                    errors.Add($"Unknown technique '{rawName}'.");
+                    continue;
+                }
+
+                var match = all.FirstOrDefault(t => string.Equals(t.Name, name, StringComparison.OrdinalIgnoreCase));
+                if (match is null)
+                {
+                    errors.Add($"Unknown technique '{name}'.");
+                    continue;
+                }
+
+                if (!techniques.Any(t => t.Id == match.Id))
+                {
+                    techniques.Add(match);
+                }
+            }
+
+            return (techniques, errors);
         }
 
-        return all.Where(t => request.AllowedTechniqueIds.Contains(t.Id)).ToList();
+        return (all.Where(t => request.AllowedTechniqueIds.Contains(t.Id)).ToList(), []);
     }
 }

@@ -108,6 +108,18 @@ public class ProductsController : ControllerBase
 
         // Validate all zones BEFORE saving
         var validationErrors = ValidateZones(incomingZones, request.ImageWidth, request.ImageHeight);
+
+        // Validate and resolve techniques up-front so invalid names fail with 400 and updates remain deterministic.
+        var resolvedTechniqueIdsByZoneIndex = new Dictionary<int, List<int>>();
+        for (var i = 0; i < incomingZones.Count; i++)
+        {
+            var incomingZone = incomingZones[i];
+            var zoneName = string.IsNullOrWhiteSpace(incomingZone.Name) ? $"Zone #{i}" : incomingZone.Name;
+            var resolution = ResolveTechniqueIds(allTechniques, incomingZone.AllowedTechniques ?? [], zoneName);
+            resolvedTechniqueIdsByZoneIndex[i] = resolution.TechniqueIds;
+            validationErrors.AddRange(resolution.Errors);
+        }
+
         if (validationErrors.Count > 0)
         {
             return BadRequest(new ValidationErrorResponse { Errors = validationErrors });
@@ -143,8 +155,11 @@ public class ProductsController : ControllerBase
         }
 
         // STEP 2: Update or create zones
-        foreach (var incomingZone in incomingZones)
+        for (var i = 0; i < incomingZones.Count; i++)
         {
+            var incomingZone = incomingZones[i];
+            var techniqueIds = resolvedTechniqueIdsByZoneIndex[i];
+
             if (incomingZone.Id > 0)
             {
                 // Find and update existing zone
@@ -162,13 +177,6 @@ public class ProductsController : ControllerBase
                     existingZone.MaxColors = incomingZone.MaxColors;
 
                     existingZone.AllowedTechniques.Clear();
-                    var techniqueIds = incomingZone.AllowedTechniques
-                        .Select(name => ResolveTechniqueByName(allTechniques, name))
-                        .OfType<PrintTechnique>()
-                        .Select(t => t.Id)
-                        .Distinct()
-                        .ToList();
-
                     foreach (var techniqueId in techniqueIds)
                     {
                         existingZone.AllowedTechniques.Add(new PrintZoneTechnique
@@ -182,13 +190,6 @@ public class ProductsController : ControllerBase
             else
             {
                 // Create new zone (id=0 means new)
-                var techniqueIds = incomingZone.AllowedTechniques
-                    .Select(name => ResolveTechniqueByName(allTechniques, name))
-                    .OfType<PrintTechnique>()
-                    .Select(t => t.Id)
-                    .Distinct()
-                    .ToList();
-
                 var newZone = new PrintZone
                 {
                     Name = incomingZone.Name ?? "Unnamed Zone",  // Fallback name
@@ -424,9 +425,40 @@ public class ProductsController : ControllerBase
 
     private static PrintTechnique? ResolveTechniqueByName(List<PrintTechnique> allTechniques, string name)
     {
-        var normalized = name.Replace('_', ' ');
         return allTechniques.FirstOrDefault(t =>
-            string.Equals(t.Name, normalized, StringComparison.OrdinalIgnoreCase) ||
-            string.Equals(t.Name.Replace(" ", "_"), name, StringComparison.OrdinalIgnoreCase));
+            string.Equals(t.Name, name, StringComparison.OrdinalIgnoreCase));
+    }
+
+    private static (List<int> TechniqueIds, List<string> Errors) ResolveTechniqueIds(
+        List<PrintTechnique> allTechniques,
+        IEnumerable<string> requestedTechniqueNames,
+        string zoneName)
+    {
+        var errors = new List<string>();
+        var techniqueIds = new List<int>();
+
+        foreach (var rawName in requestedTechniqueNames)
+        {
+            var name = rawName?.Trim() ?? string.Empty;
+            if (string.IsNullOrWhiteSpace(name))
+            {
+                errors.Add($"Unknown technique '{rawName}' in zone '{zoneName}'.");
+                continue;
+            }
+
+            var match = ResolveTechniqueByName(allTechniques, name);
+            if (match is null)
+            {
+                errors.Add($"Unknown technique '{name}' in zone '{zoneName}'.");
+                continue;
+            }
+
+            if (!techniqueIds.Contains(match.Id))
+            {
+                techniqueIds.Add(match.Id);
+            }
+        }
+
+        return (techniqueIds, errors);
     }
 }
