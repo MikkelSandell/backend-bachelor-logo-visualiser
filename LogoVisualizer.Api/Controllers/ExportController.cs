@@ -1,10 +1,15 @@
 using LogoVisualizer.Api.DTOs;
 using LogoVisualizer.Api.Services;
 using Microsoft.AspNetCore.Mvc;
+using QuestPDF.Fluent;
+using QuestPDF.Helpers;
+using SkiaSharp;
 using SixLabors.Fonts;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.Drawing.Processing;
 using SixLabors.ImageSharp.Processing;
+using Svg.Skia;
+using UploadExportRequest = LogoVisualizer.Api.DTOs.ExportPngRequest;
 
 namespace LogoVisualizer.Api.Controllers;
 
@@ -41,17 +46,60 @@ public class ExportController : ControllerBase
     {
         if (!ModelState.IsValid) return ValidationProblem(ModelState);
 
+        var result = await GenerateMockupPngAsync(request, ct);
+        if (result.Error is not null) return result.Error;
+
+        return File(result.Png!, "image/png", $"mockup-{request.ProductId}.png");
+    }
+
+    [HttpPost("pdf")]
+    [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(FileResult))]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> GeneratePdf([FromBody] MultiPagePdfExportRequest request, CancellationToken ct)
+    {
+        if (!ModelState.IsValid) return ValidationProblem(ModelState);
+
+        if (request.Pages is null || request.Pages.Count == 0)
+            return BadRequest(new { error = "At least one export page is required." });
+
+        var pngPages = new List<byte[]>(request.Pages.Count);
+        foreach (var page in request.Pages)
+        {
+            if (page is null)
+                return BadRequest(new { error = "Each page must be a valid export request object." });
+
+            var pageResult = await GenerateMockupPngAsync(page, ct);
+            if (pageResult.Error is not null) return pageResult.Error;
+            pngPages.Add(pageResult.Png!);
+        }
+
+        try
+        {
+            var pdfBytes = CreateMultiPagePdfFromPngs(pngPages);
+            return File(pdfBytes, "application/pdf", "logo-visualisering.pdf");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error generating PDF export.");
+            return Problem("An error occurred while generating the PDF. Please try again.");
+        }
+    }
+
+    private async Task<(byte[]? Png, IActionResult? Error)> GenerateMockupPngAsync(UploadExportRequest request, CancellationToken ct)
+    {
+
         if ((request.Placements is null || request.Placements.Count == 0)
             && (request.TextPlacements is null || request.TextPlacements.Count == 0))
-            return BadRequest(new { error = "At least one logo or text placement is required." });
+            return (null, BadRequest(new { error = "At least one logo or text placement is required." }));
 
         if (string.IsNullOrWhiteSpace(request.BackgroundImageUrl))
-            return BadRequest(new { error = "BackgroundImageUrl is required." });
+            return (null, BadRequest(new { error = "BackgroundImageUrl is required." }));
 
         // Fetch the adapted product — supports numeric DB IDs and Midocean master codes
         var product = await _productData.GetAdaptedByIdAsync(request.ProductId, ct);
         if (product is null)
-            return NotFound(new { error = $"Product '{request.ProductId}' not found." });
+            return (null, NotFound(new { error = $"Product '{request.ProductId}' not found." }));
 
         var logoDir = Path.Combine(_env.ContentRootPath, "uploads", "logos");
 
@@ -61,14 +109,14 @@ public class ExportController : ControllerBase
         {
             var zone = product.PrintZones.FirstOrDefault(z => z.Id == placement.ZoneId);
             if (zone is null)
-                return NotFound(new { error = $"Zone '{placement.ZoneId}' not found." });
+                return (null, NotFound(new { error = $"Zone '{placement.ZoneId}' not found." }));
 
             if (!Directory.Exists(logoDir))
-                return BadRequest(new { error = "No logos have been uploaded yet." });
+                return (null, BadRequest(new { error = "No logos have been uploaded yet." }));
 
             var logoFiles = Directory.GetFiles(logoDir, $"{placement.LogoId}.*");
             if (logoFiles.Length == 0)
-                return BadRequest(new { error = $"Logo '{placement.LogoId}' not found. Re-upload it and try again." });
+                return (null, BadRequest(new { error = $"Logo '{placement.LogoId}' not found. Re-upload it and try again." }));
 
             resolved.Add((logoFiles[0], placement));
         }
@@ -85,7 +133,7 @@ public class ExportController : ControllerBase
             if (!bgResponse.IsSuccessStatusCode)
             {
                 _logger.LogError("Failed to download background image from {Url}", request.BackgroundImageUrl);
-                return Problem($"Failed to download product image. Status: {bgResponse.StatusCode}");
+                return (null, Problem($"Failed to download product image. Status: {bgResponse.StatusCode}"));
             }
 
             using var bgStream = await bgResponse.Content.ReadAsStreamAsync(ct);
@@ -94,8 +142,11 @@ public class ExportController : ControllerBase
             // Composite each logo in order
             foreach (var (logoPath, placement) in resolved)
             {
-                using var logoImage = await Image.LoadAsync(logoPath, ct);
-                logoImage.Mutate(ctx => ctx.Resize(placement.LogoWidth, placement.LogoHeight));
+                using var logoImage = await LoadLogoImageForCompositingAsync(
+                    logoPath,
+                    placement.LogoWidth,
+                    placement.LogoHeight,
+                    ct);
                 productImage.Mutate(ctx =>
                     ctx.DrawImage(logoImage, new Point(placement.LogoX, placement.LogoY), 1f));
             }
@@ -138,16 +189,69 @@ public class ExportController : ControllerBase
                 }
             }
 
-            var output = new MemoryStream();
+            using var output = new MemoryStream();
             await productImage.SaveAsPngAsync(output, ct);
-            output.Position = 0;
-
-            return File(output, "image/png", $"mockup-{request.ProductId}.png");
+            return (output.ToArray(), null);
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error compositing logos for product {ProductId}", request.ProductId);
-            return Problem("An error occurred while generating the mockup. Please try again.");
+            return (null, Problem("An error occurred while generating the mockup. Please try again."));
         }
+    }
+
+    private static byte[] CreateMultiPagePdfFromPngs(IReadOnlyList<byte[]> pngPages)
+    {
+        if (pngPages is null || pngPages.Count == 0)
+            throw new ArgumentException("At least one PNG page is required.", nameof(pngPages));
+
+        QuestPDF.Settings.License = QuestPDF.Infrastructure.LicenseType.Community;
+        var pdf = Document.Create(container =>
+        {
+            foreach (var png in pngPages)
+            {
+                container.Page(page =>
+                {
+                    page.Margin(0);
+                    page.Size(PageSizes.A4);
+                    page.Content().Image(png).FitArea();
+                });
+            }
+        });
+
+        return pdf.GeneratePdf();
+    }
+
+    private static async Task<Image> LoadLogoImageForCompositingAsync(string logoPath, int targetWidth, int targetHeight, CancellationToken ct)
+    {
+        if (!string.Equals(Path.GetExtension(logoPath), ".svg", StringComparison.OrdinalIgnoreCase))
+        {
+            var raster = await Image.LoadAsync(logoPath, ct);
+            raster.Mutate(ctx => ctx.Resize(targetWidth, targetHeight));
+            return raster;
+        }
+
+        var width = Math.Max(1, targetWidth);
+        var height = Math.Max(1, targetHeight);
+
+        using var fs = System.IO.File.OpenRead(logoPath);
+        var svg = new SKSvg();
+        var picture = svg.Load(fs) ?? throw new InvalidOperationException("Invalid SVG logo file.");
+
+        using var bitmap = new SKBitmap(width, height, SKColorType.Rgba8888, SKAlphaType.Premul);
+        using var canvas = new SKCanvas(bitmap);
+        canvas.Clear(SKColors.Transparent);
+
+        var sx = width / picture.CullRect.Width;
+        var sy = height / picture.CullRect.Height;
+        canvas.Scale(sx, sy);
+        canvas.DrawPicture(picture);
+        canvas.Flush();
+
+        using var skImage = SKImage.FromBitmap(bitmap);
+        using var data = skImage.Encode(SKEncodedImageFormat.Png, 100);
+        var pngBytes = data.ToArray();
+        using var pngStream = new MemoryStream(pngBytes);
+        return await Image.LoadAsync(pngStream, ct);
     }
 }

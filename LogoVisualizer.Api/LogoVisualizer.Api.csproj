@@ -25,6 +25,10 @@
     <!-- IP rate limiting for public viewer/upload endpoints -->
     <PackageReference Include="AspNetCoreRateLimit" Version="5.0.0" />
 
+    <!-- Multi-page PDF export generation -->
+    <PackageReference Include="QuestPDF" Version="2024.7.1" />
+    <PackageReference Include="Svg.Skia" Version="3.0.4" />
+
     <!-- Required by dotnet-ef CLI when this is the startup project -->
     <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.0">
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>

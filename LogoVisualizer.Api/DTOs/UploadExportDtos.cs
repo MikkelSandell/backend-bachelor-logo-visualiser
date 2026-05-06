@@ -62,3 +62,8 @@ public class ExportPngRequest
     /// <summary>Text placements — may be empty if only logos are used.</summary>
     public List<TextPlacement> TextPlacements { get; set; } = [];
 }
+
+public sealed class MultiPagePdfExportRequest
+{
+    public List<ExportPngRequest> Pages { get; set; } = [];
+}
