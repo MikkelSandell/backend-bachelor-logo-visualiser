@@ -16,6 +16,13 @@ This is a **bachelor's thesis** project. Code and docs are in English; UI string
 
 ```
 LogoVisualizer.sln
+├── test/                   — Newman (Postman CLI) integration tests
+│   ├── package.json        — npm scripts: npm test / test:verbose / test:bail
+│   ├── setup.js            — generates fixtures/test-image.png before Newman runs
+│   ├── logo-visualizer.postman_collection.json
+│   ├── logo-visualizer.postman_environment.json
+│   └── fixtures/
+│       └── import-product.json
 ├── LogoVisualizer.Api      — Web API (controllers, DTOs, services, Program.cs)
 │   ├── Controllers/        — HTTP controllers (MidoceanProductsController is the active one)
 │   ├── Data/               — Static data files (midocean-top10.json)
@@ -25,7 +32,7 @@ LogoVisualizer.sln
 │   ├── Properties/         — launchSettings.json (forces Development environment)
 │   └── Services/           — Service interfaces + implementations
 └── LogoVisualizer.Data     — EF Core models, AppDbContext, repositories
-    └── Migrations/         — Created, not yet applied (no DB)
+    └── Migrations/         — Applied: InitialCreate, AddPrintZoneImageUrl, RemoveAuditLogAndFixDecimalPrecision, RenameToSlugTechniques
 ```
 
 ---
