@@ -1,0 +1,1053 @@
+{
+  "info": {
+    "name": "Logo Visualizer API – Integration Tests",
+    "_postman_id": "00000001-0002-0003-0004-000000000005",
+    "description": "End-to-end integration tests for the Logo Visualizer backend API.\n\nPrerequisites:\n  1. Docker database running: docker compose up -d\n  2. API running: dotnet run --project LogoVisualizer.Api\n  3. Fixtures created: node setup.js  (done automatically by `npm test`)\n\nRequests run in order. Each folder's requests depend on state set by previous folders.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "01 Auth",
+      "item": [
+        {
+          "name": "Get dev token",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                  "",
+                  "pm.test('Response has a token string', () => {",
+                  "    const data = pm.response.json();",
+                  "    pm.expect(data).to.have.property('token');",
+                  "    pm.expect(data.token).to.be.a('string').and.not.empty;",
+                  "    pm.environment.set('token', data.token);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/dev-token",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "dev-token"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "02 Techniques",
+      "item": [
+        {
+          "name": "Get all techniques",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                  "",
+                  "pm.test('Returns non-empty array', () => {",
+                  "    pm.expect(pm.response.json()).to.be.an('array').with.length.greaterThan(0);",
+                  "});",
+                  "",
+                  "pm.test('Each item has numeric id and non-empty name', () => {",
+                  "    pm.response.json().forEach(t => {",
+                  "        pm.expect(t).to.have.property('id').that.is.a('number');",
+                  "        pm.expect(t).to.have.property('name').that.is.a('string').and.not.empty;",
+                  "    });",
+                  "});",
+                  "",
+                  "pm.test('All six expected slug names are present', () => {",
+                  "    const names = pm.response.json().map(t => t.name);",
+                  "    ['screen_print', 'embroidery', 'pad_print', 'digital_print', 'engraving', 'sublimation']",
+                  "        .forEach(slug => pm.expect(names).to.include(slug));",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/techniques",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "techniques"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "03 Products – Read",
+      "item": [
+        {
+          "name": "Get all products",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Returns an array', () => pm.expect(pm.response.json()).to.be.an('array'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/products",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "products"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get non-existent product – expect 404",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 404', () => pm.response.to.have.status(404));",
+                  "pm.test('Error field in body', () => pm.expect(pm.response.json()).to.have.property('error'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/products/999999",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "products", "999999"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "04 Products – CRUD",
+      "item": [
+        {
+          "name": "Create product",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 201', () => pm.response.to.have.status(201));",
+                  "",
+                  "pm.test('Response has required product fields', () => {",
+                  "    const data = pm.response.json();",
+                  "    pm.expect(data).to.have.property('id').that.is.a('number');",
+                  "    pm.expect(data).to.have.property('title', 'Newman Test Product');",
+                  "    pm.expect(data).to.have.property('imageUrl').that.is.a('string').and.not.empty;",
+                  "    pm.expect(data).to.have.property('imageWidth', 100);",
+                  "    pm.expect(data).to.have.property('imageHeight', 100);",
+                  "    pm.expect(data).to.have.property('printZones').that.is.an('array');",
+                  "    pm.environment.set('productId', data.id);",
+                  "    pm.environment.set('productImageUrl', data.imageUrl);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                { "key": "Title",       "value": "Newman Test Product", "type": "text" },
+                { "key": "Image",       "type": "file", "src": "fixtures/test-image.png" },
+                { "key": "ImageWidth",  "value": "100", "type": "text" },
+                { "key": "ImageHeight", "value": "100", "type": "text" }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/products",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "products"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get product by ID",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                  "",
+                  "pm.test('Product matches created ID and title', () => {",
+                  "    const data = pm.response.json();",
+                  "    pm.expect(data.id).to.equal(parseInt(pm.environment.get('productId')));",
+                  "    pm.expect(data.title).to.equal('Newman Test Product');",
+                  "    pm.expect(data.printZones).to.be.an('array');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/products/{{productId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "products", "{{productId}}"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update product – add zone",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                  "",
+                  "pm.test('Title updated and zone created', () => {",
+                  "    const data = pm.response.json();",
+                  "    pm.expect(data.title).to.equal('Newman Test Product Updated');",
+                  "    pm.expect(data.printZones).to.be.an('array').with.length(1);",
+                  "    const zone = data.printZones[0];",
+                  "    pm.expect(zone.id).to.be.a('number').and.greaterThan(0);",
+                  "    pm.expect(zone.name).to.equal('Front Zone');",
+                  "    pm.expect(zone.allowedTechniques).to.include('screen_print');",
+                  "    pm.environment.set('zoneId', zone.id);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type",  "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id\": {{productId}},\n  \"title\": \"Newman Test Product Updated\",\n  \"imageUrl\": \"{{productImageUrl}}\",\n  \"imageWidth\": 100,\n  \"imageHeight\": 100,\n  \"printZones\": [\n    {\n      \"id\": 0,\n      \"name\": \"Front Zone\",\n      \"x\": 10,\n      \"y\": 10,\n      \"width\": 80,\n      \"height\": 80,\n      \"maxPhysicalWidthMm\": 100.0,\n      \"maxPhysicalHeightMm\": 100.0,\n      \"maxColors\": 4,\n      \"allowedTechniques\": [\"screen_print\"]\n    }\n  ]\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/products/{{productId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "products", "{{productId}}"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update product – out-of-bounds zone – expect 400",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 400', () => pm.response.to.have.status(400));",
+                  "",
+                  "pm.test('Validation errors array returned', () => {",
+                  "    const data = pm.response.json();",
+                  "    pm.expect(data).to.have.property('errors').that.is.an('array').with.length.greaterThan(0);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type",  "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id\": {{productId}},\n  \"title\": \"Should Not Save\",\n  \"imageUrl\": \"{{productImageUrl}}\",\n  \"imageWidth\": 100,\n  \"imageHeight\": 100,\n  \"printZones\": [\n    {\n      \"id\": 0,\n      \"name\": \"Oversized Zone\",\n      \"x\": 50,\n      \"y\": 50,\n      \"width\": 200,\n      \"height\": 200,\n      \"maxPhysicalWidthMm\": 100.0,\n      \"maxPhysicalHeightMm\": 100.0,\n      \"maxColors\": 4,\n      \"allowedTechniques\": [\"screen_print\"]\n    }\n  ]\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/products/{{productId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "products", "{{productId}}"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update product – unknown technique – expect 400",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 400', () => pm.response.to.have.status(400));",
+                  "",
+                  "pm.test('Validation errors array returned', () => {",
+                  "    const data = pm.response.json();",
+                  "    pm.expect(data).to.have.property('errors').that.is.an('array').with.length.greaterThan(0);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type",  "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id\": {{productId}},\n  \"title\": \"Should Not Save\",\n  \"imageUrl\": \"{{productImageUrl}}\",\n  \"imageWidth\": 100,\n  \"imageHeight\": 100,\n  \"printZones\": [\n    {\n      \"id\": 0,\n      \"name\": \"Front Zone\",\n      \"x\": 10,\n      \"y\": 10,\n      \"width\": 80,\n      \"height\": 80,\n      \"maxPhysicalWidthMm\": 100.0,\n      \"maxPhysicalHeightMm\": 100.0,\n      \"maxColors\": 4,\n      \"allowedTechniques\": [\"nonexistent_technique\"]\n    }\n  ]\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/products/{{productId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "products", "{{productId}}"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Export product as JSON",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                  "",
+                  "pm.test('Content-Type is application/json', () => {",
+                  "    pm.expect(pm.response.headers.get('Content-Type')).to.include('application/json');",
+                  "});",
+                  "",
+                  "// Export uses JsonSerializer without a naming policy → PascalCase keys",
+                  "pm.test('Exported JSON has correct product shape', () => {",
+                  "    const data = pm.response.json();",
+                  "    pm.expect(data).to.have.property('Title', 'Newman Test Product Updated');",
+                  "    pm.expect(data).to.have.property('PrintZones').that.is.an('array').with.length(1);",
+                  "    pm.expect(data.PrintZones[0]).to.have.property('Name', 'Front Zone');",
+                  "    pm.expect(data.PrintZones[0]).to.have.property('AllowedTechniques').that.includes('screen_print');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/products/{{productId}}/export",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "products", "{{productId}}", "export"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "05 Print Zones – Endpoint CRUD",
+      "item": [
+        {
+          "name": "Get zones for product",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Returns non-empty array', () => {",
+                  "    pm.expect(pm.response.json()).to.be.an('array').with.length.greaterThan(0);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/products/{{productId}}/zones",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "products", "{{productId}}", "zones"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get zone by ID",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                  "",
+                  "pm.test('Zone has expected shape', () => {",
+                  "    const data = pm.response.json();",
+                  "    pm.expect(data.id).to.equal(parseInt(pm.environment.get('zoneId')));",
+                  "    pm.expect(data).to.have.property('name').that.is.a('string');",
+                  "    pm.expect(data).to.have.property('x').that.is.a('number');",
+                  "    pm.expect(data).to.have.property('y').that.is.a('number');",
+                  "    pm.expect(data).to.have.property('width').that.is.a('number');",
+                  "    pm.expect(data).to.have.property('height').that.is.a('number');",
+                  "    pm.expect(data).to.have.property('allowedTechniques').that.is.an('array');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/products/{{productId}}/zones/{{zoneId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "products", "{{productId}}", "zones", "{{zoneId}}"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Create zone via zones endpoint",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 201', () => pm.response.to.have.status(201));",
+                  "",
+                  "pm.test('Zone created with correct data', () => {",
+                  "    const data = pm.response.json();",
+                  "    pm.expect(data.id).to.be.a('number').and.greaterThan(0);",
+                  "    pm.expect(data.name).to.equal('Direct Zone');",
+                  "    pm.expect(data.allowedTechniques).to.include('screen_print');",
+                  "    pm.environment.set('createdZoneId', data.id);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type",  "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Direct Zone\",\n  \"x\": 5,\n  \"y\": 5,\n  \"width\": 50,\n  \"height\": 50,\n  \"maxPhysicalWidthMm\": 80.0,\n  \"maxPhysicalHeightMm\": 80.0,\n  \"maxColors\": 6,\n  \"allowedTechniqueNames\": [\"screen_print\"],\n  \"allowedTechniqueIds\": []\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/products/{{productId}}/zones",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "products", "{{productId}}", "zones"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update zone via zones endpoint",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 204', () => pm.response.to.have.status(204));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type",  "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Direct Zone Updated\",\n  \"x\": 5,\n  \"y\": 5,\n  \"width\": 40,\n  \"height\": 40,\n  \"maxPhysicalWidthMm\": 60.0,\n  \"maxPhysicalHeightMm\": 60.0,\n  \"maxColors\": 3,\n  \"allowedTechniqueNames\": [\"screen_print\", \"embroidery\"],\n  \"allowedTechniqueIds\": []\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/products/{{productId}}/zones/{{createdZoneId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "products", "{{productId}}", "zones", "{{createdZoneId}}"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Verify zone update persisted",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                  "",
+                  "pm.test('Updated fields are persisted', () => {",
+                  "    const data = pm.response.json();",
+                  "    pm.expect(data.name).to.equal('Direct Zone Updated');",
+                  "    pm.expect(data.width).to.equal(40);",
+                  "    pm.expect(data.height).to.equal(40);",
+                  "    pm.expect(data.allowedTechniques).to.include('embroidery');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/products/{{productId}}/zones/{{createdZoneId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "products", "{{productId}}", "zones", "{{createdZoneId}}"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Delete zone via zones endpoint",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 204', () => pm.response.to.have.status(204));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/products/{{productId}}/zones/{{createdZoneId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "products", "{{productId}}", "zones", "{{createdZoneId}}"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get deleted zone – expect 404",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 404', () => pm.response.to.have.status(404));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/products/{{productId}}/zones/{{createdZoneId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "products", "{{productId}}", "zones", "{{createdZoneId}}"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get zones for non-existent product – expect 404",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 404', () => pm.response.to.have.status(404));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/products/999999/zones",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "products", "999999", "zones"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "06 Logo Upload",
+      "item": [
+        {
+          "name": "Upload logo PNG",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                  "",
+                  "pm.test('Response has logoId, logoUrl, contentType, fileSizeBytes', () => {",
+                  "    const data = pm.response.json();",
+                  "    pm.expect(data).to.have.property('logoId').that.is.a('string').and.not.empty;",
+                  "    pm.expect(data).to.have.property('logoUrl').that.is.a('string').and.includes('/api/files/');",
+                  "    pm.expect(data).to.have.property('contentType', 'image/png');",
+                  "    pm.expect(data).to.have.property('fileSizeBytes').that.is.a('number').and.greaterThan(0);",
+                  "    pm.environment.set('logoId', data.logoId);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                { "key": "file", "type": "file", "src": "fixtures/test-image.png" }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/logos/upload",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "logos", "upload"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Upload logo – unsupported file type – expect 400",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 400', () => pm.response.to.have.status(400));",
+                  "pm.test('Error field in body', () => pm.expect(pm.response.json()).to.have.property('error'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                { "key": "file", "type": "file", "src": "fixtures/import-product.json" }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/logos/upload",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "logos", "upload"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "07 Product Import",
+      "item": [
+        {
+          "name": "Import products from JSON",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                  "",
+                  "pm.test('One product imported and ID returned', () => {",
+                  "    const data = pm.response.json();",
+                  "    pm.expect(data).to.have.property('imported', 1);",
+                  "    pm.expect(data).to.have.property('productIds').that.is.an('array').with.length(1);",
+                  "    pm.expect(data.productIds[0]).to.be.a('number');",
+                  "    pm.environment.set('importedProductId', data.productIds[0]);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                { "key": "file", "type": "file", "src": "fixtures/import-product.json" }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/products/import",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "products", "import"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Verify imported product exists",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                  "",
+                  "pm.test('Imported product has correct title and zone', () => {",
+                  "    const data = pm.response.json();",
+                  "    pm.expect(data.title).to.equal('Newman Import Test Product');",
+                  "    pm.expect(data.printZones).to.be.an('array').with.length(1);",
+                  "    pm.expect(data.printZones[0].name).to.equal('Import Front Zone');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/products/{{importedProductId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "products", "{{importedProductId}}"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Import invalid JSON – expect 400",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 400', () => pm.response.to.have.status(400));",
+                  "pm.test('Error field in body', () => pm.expect(pm.response.json()).to.have.property('error'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                { "key": "file", "type": "file", "src": "fixtures/test-image.png" }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/products/import",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "products", "import"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Delete imported product (cleanup)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 204', () => pm.response.to.have.status(204));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/products/{{importedProductId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "products", "{{importedProductId}}"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "08 Cleanup",
+      "item": [
+        {
+          "name": "Delete test product",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 204', () => pm.response.to.have.status(204));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/products/{{productId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "products", "{{productId}}"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Verify product deleted – expect 404",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 404', () => pm.response.to.have.status(404));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/products/{{productId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "products", "{{productId}}"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "09 Auth Guard",
+      "item": [
+        {
+          "name": "Create product – no token – expect 401",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 401', () => pm.response.to.have.status(401));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                { "key": "Title",       "value": "Unauthorized Product", "type": "text" },
+                { "key": "Image",       "type": "file", "src": "fixtures/test-image.png" },
+                { "key": "ImageWidth",  "value": "100", "type": "text" },
+                { "key": "ImageHeight", "value": "100", "type": "text" }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/products",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "products"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update product – no token – expect 401",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 401', () => pm.response.to.have.status(401));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"id\": 999, \"title\": \"Unauth\", \"imageUrl\": \"\", \"imageWidth\": 100, \"imageHeight\": 100, \"printZones\": []}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/products/999",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "products", "999"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Delete product – no token – expect 401",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 401', () => pm.response.to.have.status(401));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/products/999999",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "products", "999999"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Create zone – no token – expect 401",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 401', () => pm.response.to.have.status(401));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"name\": \"Unauth Zone\", \"x\": 0, \"y\": 0, \"width\": 50, \"height\": 50, \"maxPhysicalWidthMm\": 50, \"maxPhysicalHeightMm\": 50, \"allowedTechniqueNames\": [], \"allowedTechniqueIds\": []}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/products/1/zones",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "products", "1", "zones"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Import products – no token – expect 401",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 401', () => pm.response.to.have.status(401));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                { "key": "file", "type": "file", "src": "fixtures/import-product.json" }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/products/import",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "products", "import"]
+            }
+          },
+          "response": []
+        }
+      ]
+    }
+  ],
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:5000", "type": "string" }
+  ]
+}

@@ -1,0 +1,14 @@
+{
+  "name": "logo-visualizer-integration-tests",
+  "version": "1.0.0",
+  "description": "Newman integration tests for the Logo Visualizer API",
+  "scripts": {
+    "setup": "node setup.js",
+    "test": "node setup.js && newman run logo-visualizer.postman_collection.json --environment logo-visualizer.postman_environment.json --reporters cli,json --reporter-json-export results/test-results.json",
+    "test:verbose": "node setup.js && newman run logo-visualizer.postman_collection.json --environment logo-visualizer.postman_environment.json --reporters cli --verbose",
+    "test:bail": "node setup.js && newman run logo-visualizer.postman_collection.json --environment logo-visualizer.postman_environment.json --bail"
+  },
+  "devDependencies": {
+    "newman": "^6.2.1"
+  }
+}

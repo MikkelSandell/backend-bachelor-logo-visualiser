@@ -10,6 +10,7 @@ REST API backend for the **Logo Visualizer & Product Setup Tool** — a service 
 |------|---------|-------|
 | .NET SDK | 10.x | https://dotnet.microsoft.com/download/dotnet/10.0 |
 | Docker Desktop | any recent | Required for SQL Server |
+| Node.js | 18+ | Required to run the integration test suite |
 
 > **Note:** The .NET *runtime* alone is not enough — you need the full **SDK** to build and run migrations.
 
@@ -167,6 +168,91 @@ dotnet ef database update `
     --project LogoVisualizer.Data `
     --startup-project LogoVisualizer.Api
 ```
+
+---
+
+---
+
+## Testing
+
+All tests live in `test/`. The folder is structured so that new test types (unit, e2e, load, …) can be added as separate subfolders without touching what already exists.
+
+```
+test/
+├── package.json                              # npm scripts + Newman dev dependency
+├── setup.js                                  # generates binary fixtures before Newman runs
+├── logo-visualizer.postman_collection.json   # Newman collection (integration tests)
+├── logo-visualizer.postman_environment.json  # base URL + shared env variables
+└── fixtures/
+    └── import-product.json                   # static JSON payload for import tests
+```
+
+---
+
+### Integration tests (Newman)
+
+The integration tests use [Newman](https://www.npmjs.com/package/newman), the Postman CLI runner. They hit a live API and database — no mocking. Tests run sequentially and chain state through environment variables (e.g. `productId` created in one request is reused by the next).
+
+#### Step 1 — Start the database
+
+```powershell
+docker compose up -d
+```
+
+Wait until the seeder container exits (check with `docker compose logs seeder`). SQL Server must be healthy before the API can connect.
+
+#### Step 2 — Start the API
+
+Open a second terminal:
+
+```powershell
+cd LogoVisualizer.Api
+dotnet run
+```
+
+The API must be reachable at `http://localhost:5000` before running tests.
+
+#### Step 3 — Install dependencies (first time only)
+
+```powershell
+cd test
+npm install
+```
+
+#### Step 4 — Run the tests
+
+```powershell
+npm test
+```
+
+This runs `setup.js` (generates `fixtures/test-image.png`) and then Newman. Output goes to the console and a JSON summary is written to `results/test-results.json`.
+
+**Optional flags:**
+
+```powershell
+npm run test:verbose   # show full request/response detail per request
+npm run test:bail      # stop on first failure
+```
+
+#### What is covered
+
+| Folder | Requests | What is verified |
+|--------|----------|-----------------|
+| 01 Auth | 1 | Dev token issued; token stored for subsequent requests |
+| 02 Techniques | 1 | All six slug names present in DB |
+| 03 Products – Read | 2 | `GET` all (200), `GET` missing ID (404) |
+| 04 Products – CRUD | 6 | Create → read → update with zone → reject out-of-bounds zone (400) → reject unknown technique (400) → export JSON |
+| 05 Print Zones – CRUD | 8 | List, get by ID, create, update, verify update persisted, delete, verify deleted (404), missing product (404) |
+| 06 Logo Upload | 2 | PNG upload (200), unsupported file type (400) |
+| 07 Product Import | 4 | Import JSON → verify in DB → reject wrong file type (400) → delete (cleanup) |
+| 08 Cleanup | 2 | Delete test product → verify 404 |
+| 09 Auth Guard | 5 | Every write endpoint returns 401 when no JWT is provided |
+
+#### Notes
+
+- Tests create and delete their own data; they do not depend on seed data being present.
+- If a run is interrupted mid-way the test product may remain in the DB. Delete it manually via Swagger (`DELETE /api/products/{id}`) before re-running.
+- The `results/` and `fixtures/test-image.png` are git-ignored.
 
 ---
 

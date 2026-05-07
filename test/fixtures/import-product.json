@@ -1,0 +1,21 @@
+[
+  {
+    "title": "Newman Import Test Product",
+    "imageUrl": "http://example.com/placeholder.png",
+    "imageWidth": 200,
+    "imageHeight": 200,
+    "printZones": [
+      {
+        "name": "Import Front Zone",
+        "x": 20,
+        "y": 20,
+        "width": 160,
+        "height": 160,
+        "maxPhysicalWidthMm": 150.0,
+        "maxPhysicalHeightMm": 150.0,
+        "maxColors": 5,
+        "allowedTechniques": ["screen_print", "pad_print"]
+      }
+    ]
+  }
+]
