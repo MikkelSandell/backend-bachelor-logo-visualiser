@@ -56,6 +56,11 @@ public class PrintZonesController : ControllerBase
         if (!ModelState.IsValid) return ValidationProblem(ModelState);
         if (!await _products.ExistsAsync(productId, ct)) return NotFound();
 
+        // Validate zone properties
+        var validationErrors = ValidateZoneRequest(request);
+        if (validationErrors.Count > 0)
+            return BadRequest(new ValidationErrorResponse { Errors = validationErrors });
+
         var zone = new PrintZone
         {
             ProductId = productId,
@@ -131,6 +136,29 @@ public class PrintZonesController : ControllerBase
         if (zone is null || zone.ProductId != productId) return NotFound();
         await _zones.DeleteAsync(id, ct);
         return NoContent();
+    }
+
+    /// <summary>Validate a single zone creation request.</summary>
+    private static List<string> ValidateZoneRequest(CreatePrintZoneRequest request)
+    {
+        var errors = new List<string>();
+
+        // Zone must have a name
+        if (string.IsNullOrWhiteSpace(request.Name))
+            errors.Add("Zone name cannot be empty.");
+        // Zone name must not exceed 200 characters
+        else if (request.Name.Length > 200)
+            errors.Add($"Zone name must not exceed 200 characters (length: {request.Name.Length}).");
+
+        // Zone must have positive dimensions
+        if (request.Width <= 0 || request.Height <= 0)
+            errors.Add($"Zone must have positive width and height (width: {request.Width}, height: {request.Height}).");
+
+        // Zone coordinates must be non-negative
+        if (request.X < 0 || request.Y < 0)
+            errors.Add($"Zone coordinates must be non-negative (x: {request.X}, y: {request.Y}).");
+
+        return errors;
     }
 
     // Resolves PrintTechnique entities by exact slug name match (e.g. "screen_print").

@@ -1,4 +1,5 @@
 using LogoVisualizer.Api.DTOs;
+using LogoVisualizer.Api.Services;
 using LogoVisualizer.Data;
 using LogoVisualizer.Data.Models;
 using LogoVisualizer.Data.Repositories;
@@ -16,12 +17,14 @@ public class ProductsController : ControllerBase
     private readonly IProductRepository _products;
     private readonly AppDbContext _db;
     private readonly IWebHostEnvironment _env;
+    private readonly IProductValidator _validator;
 
-    public ProductsController(IProductRepository products, AppDbContext db, IWebHostEnvironment env)
+    public ProductsController(IProductRepository products, AppDbContext db, IWebHostEnvironment env, IProductValidator validator)
     {
         _products = products;
         _db = db;
         _env = env;
+        _validator = validator;
     }
 
     /// <summary>Lists all products with their setup status. Public — used by both Admin and Viewer.</summary>
@@ -56,6 +59,11 @@ public class ProductsController : ControllerBase
     public async Task<IActionResult> Create([FromForm] CreateProductRequest request, CancellationToken ct)
     {
         if (!ModelState.IsValid) return ValidationProblem(ModelState);
+
+        // Validate title length before saving
+        var titleError = _validator.ValidateTitle(request.Title);
+        if (titleError is not null)
+            return BadRequest(new { error = titleError });
 
         var imagePath = await SaveProductImageAsync(request.Image, ct);
         if (imagePath is null)
@@ -251,6 +259,9 @@ public class ProductsController : ControllerBase
             // Zone must have a name
             if (string.IsNullOrWhiteSpace(zone.Name))
                 errors.Add($"Zone #{i}: name cannot be empty.");
+            // Zone name must not exceed 200 characters
+            else if (zone.Name.Length > 200)
+                errors.Add($"Zone '{zoneName}': name must not exceed 200 characters (length: {zone.Name.Length}).");
 
             // Zone must have positive dimensions
             if (zone.Width <= 0 || zone.Height <= 0)
