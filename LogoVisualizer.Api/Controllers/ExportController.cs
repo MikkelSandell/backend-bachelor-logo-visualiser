@@ -152,6 +152,10 @@ public class ExportController : ControllerBase
                     renderRect.Height,
                     ct);
 
+                PrintTechniqueColorModeHelper.ApplyColorModeForTechnique(
+                    logoImage,
+                    placement.SelectedTechniqueName);
+
                 productImage.Mutate(ctx =>
                     ctx.DrawImage(logoImage, new Point(renderRect.X, renderRect.Y), 1f));
             }
