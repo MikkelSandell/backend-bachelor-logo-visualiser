@@ -37,8 +37,10 @@ secrets.json
 .env
 .env.*
 
+# Node
+node_modules/
+
 # Integration test runtime artifacts
-test/node_modules/
 test/results/
 test/test-output.txt
 
