@@ -37,6 +37,11 @@ secrets.json
 .env
 .env.*
 
+# Integration test runtime artifacts
+test/node_modules/
+test/results/
+test/test-output.txt
+
 # OS
 .DS_Store
 Thumbs.db
