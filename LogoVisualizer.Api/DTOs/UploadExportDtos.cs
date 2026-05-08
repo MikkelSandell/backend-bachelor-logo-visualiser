@@ -21,6 +21,12 @@ public class ZonePlacement
     public int LogoY { get; set; }
     public int LogoWidth { get; set; }
     public int LogoHeight { get; set; }
+
+    /// <summary>
+    /// Optional selected print technique slug (e.g. "engraving").
+    /// If omitted, export keeps existing color behavior for backward compatibility.
+    /// </summary>
+    public string? SelectedTechniqueName { get; set; }
 }
 
 /// <summary>
