@@ -39,6 +39,8 @@ The database is seeded on first run by a Docker `seeder` container (`SEED_AND_EX
 
 ```
 LogoVisualizer.sln
+├── docs/
+│   └── architecture.md         → component diagram + startup sequence + data flows + auth + DB schema
 ├── LogoVisualizer.Tests/
 │   ├── unit_test/              → xUnit unit tests (no API or DB required)
 │   │   ├── LogoVisualizer.Tests.csproj
