@@ -23,8 +23,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\LogoVisualizer.Api\LogoVisualizer.Api.csproj" />
-    <ProjectReference Include="..\LogoVisualizer.Data\LogoVisualizer.Data.csproj" />
+    <ProjectReference Include="..\..\LogoVisualizer.Api\LogoVisualizer.Api.csproj" />
+    <ProjectReference Include="..\..\LogoVisualizer.Data\LogoVisualizer.Data.csproj" />
   </ItemGroup>
 
 </Project>

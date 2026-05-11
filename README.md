@@ -175,16 +175,50 @@ dotnet ef database update `
 
 ## Testing
 
-All tests live in `test/`. The folder is structured so that new test types (unit, e2e, load, …) can be added as separate subfolders without touching what already exists.
+All tests live in `LogoVisualizer.Tests/`:
 
 ```
-test/
-├── package.json                              # npm scripts + Newman dev dependency
-├── setup.js                                  # generates binary fixtures before Newman runs
-├── logo-visualizer.postman_collection.json   # Newman collection (integration tests)
-├── logo-visualizer.postman_environment.json  # base URL + shared env variables
-└── fixtures/
-    └── import-product.json                   # static JSON payload for import tests
+LogoVisualizer.Tests/
+├── unit_test/                                    # xUnit unit tests (no running API needed)
+│   ├── LogoVisualizer.Tests.csproj
+│   ├── ExportValidationTests.cs
+│   ├── FileUploadValidationTests.cs
+│   ├── LogoPlacementCalculatorTests.cs
+│   ├── PrintTechniqueColorModeHelperTests.cs
+│   ├── PrintTechniqueValidationTests.cs
+│   ├── PrintZoneValidationTests.cs
+│   └── ProductValidationTests.cs
+└── integration_test/                             # Newman (Postman CLI) integration tests
+    ├── package.json                              # npm scripts + Newman dev dependency
+    ├── setup.js                                  # generates binary fixtures before Newman runs
+    ├── logo-visualizer.postman_collection.json   # Newman test collection
+    ├── logo-visualizer.postman_environment.json  # base URL + shared env variables
+    └── fixtures/
+        └── import-product.json                   # static JSON payload for import tests
+```
+
+---
+
+### Unit tests (xUnit)
+
+Unit tests run in isolation — no running API or database required.
+
+```powershell
+cd LogoVisualizer.Tests\unit_test
+dotnet test
+```
+
+To run from the solution root instead:
+
+```powershell
+dotnet test LogoVisualizer.Tests\unit_test\LogoVisualizer.Tests.csproj
+```
+
+**Optional flags:**
+
+```powershell
+dotnet test --verbosity normal    # show each test name as it runs
+dotnet test --filter "FullyQualifiedName~Export"  # run only tests whose name contains "Export"
 ```
 
 ---
@@ -215,7 +249,7 @@ The API must be reachable at `http://localhost:5000` before running tests.
 #### Step 3 — Install dependencies (first time only)
 
 ```powershell
-cd test
+cd LogoVisualizer.Tests\integration_test
 npm install
 ```
 
