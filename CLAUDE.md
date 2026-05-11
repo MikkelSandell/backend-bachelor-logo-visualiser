@@ -126,6 +126,24 @@ Technique code mapping (`MapTechnique()` in `MidoceanProductService`):
 
 ---
 
+## Documentation maintenance rule — MANDATORY
+
+After **any** change to this project, keep the following two documents accurate and up to date. Do not leave them describing a state that no longer exists.
+
+| Document | Location | What to keep current |
+|----------|----------|----------------------|
+| `architecture.md` | `docs/architecture.md` | Component diagram, startup sequence, data flows, auth description, zone display rules, DB schema / migrations table |
+| OpenAPI / Swagger | Auto-generated from controllers | Every new or changed endpoint must have a `/// <summary>` doc comment and `[ProducesResponseType]` attributes for all possible response codes |
+
+**Triggers — any of the following requires an update:**
+- A controller, action, or route is added, changed, or removed → update Swagger annotations (`/// <summary>`, `[ProducesResponseType]`) and update `architecture.md` if the overall component structure changes
+- A new service, repository, or helper is introduced that affects data flow → update `architecture.md`
+- A dependency (NuGet package, EF migration, Docker service) is added or removed → update `architecture.md`
+- The DB schema changes (new migration) → update the migrations table in `architecture.md`
+- Auth behaviour changes → update the auth section in `architecture.md`
+
+---
+
 ## Naming & Coding Conventions
 
 - **Namespaces**: `LogoVisualizer.Api` and `LogoVisualizer.Data`
