@@ -534,6 +534,7 @@
                   "    pm.expect(data.name).to.equal('Direct Zone Updated');",
                   "    pm.expect(data.width).to.equal(40);",
                   "    pm.expect(data.height).to.equal(40);",
+                  "    pm.expect(data.maxColors).to.equal(3);",
                   "    pm.expect(data.allowedTechniques).to.include('embroidery');",
                   "});"
                 ]
@@ -665,6 +666,38 @@
               "raw": "{{baseUrl}}/api/logos/upload",
               "host": ["{{baseUrl}}"],
               "path": ["api", "logos", "upload"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Fetch uploaded logo file – expect 200 with correct Content-Type",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                  "",
+                  "pm.test('Content-Type is image/png', () => {",
+                  "    pm.expect(pm.response.headers.get('Content-Type')).to.include('image/png');",
+                  "});",
+                  "",
+                  "pm.test('Response body is non-empty binary', () => {",
+                  "    pm.expect(pm.response.stream.length).to.be.greaterThan(0);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/files/uploads/logos/{{logoId}}.png",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "files", "uploads", "logos", "{{logoId}}.png"]
             }
           },
           "response": []
@@ -1015,6 +1048,54 @@
           "response": []
         },
         {
+          "name": "Delete zone – no token – expect 401",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 401', () => pm.response.to.have.status(401));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/products/1/zones/1",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "products", "1", "zones", "1"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Export product JSON – no token – expect 401",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 401', () => pm.response.to.have.status(401));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/products/1/export",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "products", "1", "export"]
+            }
+          },
+          "response": []
+        },
+        {
           "name": "Import products – no token – expect 401",
           "event": [
             {
@@ -1213,9 +1294,8 @@
                 "exec": [
                   "pm.test('Status is 400', () => pm.response.to.have.status(400));",
                   "",
-                  "pm.test('Response contains error details', () => {",
-                  "    const data = pm.response.json();",
-                  "    pm.expect(data).to.exist;",
+                  "pm.test('Response has error field', () => {",
+                  "    pm.expect(pm.response.json()).to.have.property('error').that.is.a('string');",
                   "});"
                 ]
               }
@@ -1250,9 +1330,8 @@
                 "exec": [
                   "pm.test('Status is 400', () => pm.response.to.have.status(400));",
                   "",
-                  "pm.test('Response contains error details', () => {",
-                  "    const data = pm.response.json();",
-                  "    pm.expect(data).to.exist;",
+                  "pm.test('Response has error field', () => {",
+                  "    pm.expect(pm.response.json()).to.have.property('error').that.is.a('string');",
                   "});"
                 ]
               }
@@ -1278,7 +1357,7 @@
           "response": []
         },
         {
-          "name": "TC-54: PNG Export – One placement",
+          "name": "TC-54: PNG Export – Text placement only (no logo)",
           "event": [
             {
               "listen": "test",
@@ -1306,7 +1385,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\"productId\": \"{{exportProductId}}\", \"backgroundImageUrl\": \"{{exportProductImageUrl}}\", \"placements\": [{\"zoneId\": \"{{exportZoneId}}\", \"logoId\": \"{{exportLogoId}}\", \"logoX\": 0, \"logoY\": 0, \"logoWidth\": 1, \"logoHeight\": 1}], \"textPlacements\": []}",
+              "raw": "{\"productId\": \"{{exportProductId}}\", \"backgroundImageUrl\": \"{{exportProductImageUrl}}\", \"placements\": [], \"textPlacements\": [{\"zoneId\": \"{{exportZoneId}}\", \"text\": \"Test\", \"x\": 5, \"y\": 5, \"fontSize\": 12, \"color\": \"#000000\"}]}",
               "options": { "raw": { "language": "json" } }
             },
             "url": {
@@ -1365,8 +1444,10 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test('Status is either 404 or 400', () => {",
-                  "    pm.expect([400, 404, 500]).to.include(pm.response.code);",
+                  "pm.test('Status is 400 (logo not found returns bad request)', () => pm.response.to.have.status(400));",
+                  "",
+                  "pm.test('Response has error field', () => {",
+                  "    pm.expect(pm.response.json()).to.have.property('error').that.is.a('string');",
                   "});"
                 ]
               }
@@ -1486,9 +1567,8 @@
                 "exec": [
                   "pm.test('Status is 400', () => pm.response.to.have.status(400));",
                   "",
-                  "pm.test('Response contains error details', () => {",
-                  "    const data = pm.response.json();",
-                  "    pm.expect(data).to.exist;",
+                  "pm.test('Response has error field', () => {",
+                  "    pm.expect(pm.response.json()).to.have.property('error').that.is.a('string');",
                   "});"
                 ]
               }
@@ -1632,9 +1712,8 @@
                 "exec": [
                   "pm.test('Status is 400', () => pm.response.to.have.status(400));",
                   "",
-                  "pm.test('Response contains error details', () => {",
-                  "    const data = pm.response.json();",
-                  "    pm.expect(data).to.exist;",
+                  "pm.test('Response has error field', () => {",
+                  "    pm.expect(pm.response.json()).to.have.property('error').that.is.a('string');",
                   "});"
                 ]
               }
@@ -2192,6 +2271,58 @@
           "response": []
         },
         {
+          "name": "Boundary cleanup – delete min-title product",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 204', () => pm.response.to.have.status(204));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/products/{{minTitleProductId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "products", "{{minTitleProductId}}"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Boundary cleanup – delete max-title product",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 204', () => pm.response.to.have.status(204));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/products/{{maxTitleProductId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "products", "{{maxTitleProductId}}"]
+            }
+          },
+          "response": []
+        },
+        {
           "name": "Boundary cleanup – delete product",
           "event": [
             {
@@ -2282,6 +2413,119 @@
               "raw": "{{baseUrl}}/api/products/import",
               "host": ["{{baseUrl}}"],
               "path": ["api", "products", "import"]
+            }
+          },
+          "response": []
+        }
+      ]
+    }
+    ,
+    {
+      "name": "16 Midocean Adapted Endpoints",
+      "item": [
+        {
+          "name": "Get all adapted products",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                  "",
+                  "pm.test('Returns a non-empty array', () => {",
+                  "    pm.expect(pm.response.json()).to.be.an('array').with.length.greaterThan(0);",
+                  "});",
+                  "",
+                  "pm.test('Each product has required fields', () => {",
+                  "    pm.response.json().forEach(p => {",
+                  "        pm.expect(p).to.have.property('id').that.is.a('string').and.not.empty;",
+                  "        pm.expect(p).to.have.property('title').that.is.a('string').and.not.empty;",
+                  "        pm.expect(p).to.have.property('imageUrl').that.is.a('string');",
+                  "        pm.expect(p).to.have.property('imageWidth').that.is.a('number').and.greaterThan(0);",
+                  "        pm.expect(p).to.have.property('imageHeight').that.is.a('number').and.greaterThan(0);",
+                  "        pm.expect(p).to.have.property('printZones').that.is.an('array');",
+                  "    });",
+                  "    pm.environment.set('midoceanProductId', pm.response.json()[0].id);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/midocean-products/as-products",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "midocean-products", "as-products"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get single adapted product by ID",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                  "",
+                  "pm.test('Product has expected shape', () => {",
+                  "    const data = pm.response.json();",
+                  "    pm.expect(data).to.have.property('id').that.is.a('string').and.not.empty;",
+                  "    pm.expect(data).to.have.property('title').that.is.a('string').and.not.empty;",
+                  "    pm.expect(data).to.have.property('printZones').that.is.an('array');",
+                  "});",
+                  "",
+                  "pm.test('Each print zone has required fields', () => {",
+                  "    pm.response.json().printZones.forEach(z => {",
+                  "        pm.expect(z).to.have.property('id').that.is.a('string');",
+                  "        pm.expect(z).to.have.property('name').that.is.a('string').and.not.empty;",
+                  "        pm.expect(z).to.have.property('x').that.is.a('number');",
+                  "        pm.expect(z).to.have.property('y').that.is.a('number');",
+                  "        pm.expect(z).to.have.property('width').that.is.a('number');",
+                  "        pm.expect(z).to.have.property('height').that.is.a('number');",
+                  "        pm.expect(z).to.have.property('allowedTechniques').that.is.an('array');",
+                  "    });",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/midocean-products/{{midoceanProductId}}/as-product",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "midocean-products", "{{midoceanProductId}}", "as-product"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get non-existent adapted product – expect 404",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 404', () => pm.response.to.have.status(404));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/midocean-products/DOES_NOT_EXIST/as-product",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "midocean-products", "DOES_NOT_EXIST", "as-product"]
             }
           },
           "response": []

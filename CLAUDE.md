@@ -39,13 +39,16 @@ The database is seeded on first run by a Docker `seeder` container (`SEED_AND_EX
 
 ```
 LogoVisualizer.sln
-├── test/                       → Newman (Postman CLI) integration tests
-│   ├── package.json            ← npm scripts: npm test / npm run test:verbose
-│   ├── setup.js                ← generates fixtures/test-image.png
-│   ├── logo-visualizer.postman_collection.json
-│   ├── logo-visualizer.postman_environment.json
-│   └── fixtures/
-│       └── import-product.json
+├── LogoVisualizer.Tests/
+│   ├── unit_test/              → xUnit unit tests (no API or DB required)
+│   │   ├── LogoVisualizer.Tests.csproj
+│   │   └── *Tests.cs           (validators, helpers, placement calculator)
+│   └── integration_test/       → Newman (Postman CLI) integration tests
+│       ├── package.json        ← npm scripts: npm test / npm run test:verbose
+│       ├── setup.js            ← generates image + JSON fixtures before Newman runs
+│       ├── logo-visualizer.postman_collection.json
+│       ├── logo-visualizer.postman_environment.json
+│       └── fixtures/
 ├── LogoVisualizer.Api          → Web API entry point
 │   ├── Controllers/
 │   │   ├── AuthController.cs              ← POST /api/auth/dev-token (Development only)

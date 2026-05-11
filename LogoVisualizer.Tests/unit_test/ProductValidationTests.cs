@@ -5,7 +5,7 @@ using Xunit;
 namespace LogoVisualizer.Tests;
 
 /// <summary>
-/// Unit tests for product validation (title and image).
+/// Unit tests for product validation (title and image dimensions).
 /// Based on test cases TC-01 through TC-12.
 /// </summary>
 public class ProductValidationTests
@@ -13,126 +13,92 @@ public class ProductValidationTests
     private readonly ProductValidator _validator = new();
 
     // =====================================================================
-    // Product Title Validation (TC-01 to TC-05)
+    // Title validation (TC-01 to TC-05)
     // =====================================================================
 
-    /// <summary>TC-01: Accept valid product title</summary>
+    /// <summary>TC-01: Accept a valid product title.</summary>
     [Fact]
     public void ValidateTitle_WithValidTitle_ReturnsNull()
     {
-        // Arrange
-        var title = "Classic T-Shirt";
+        var error = _validator.ValidateTitle("Classic T-Shirt");
 
-        // Act
-        var error = _validator.ValidateTitle(title);
-
-        // Assert
         error.Should().BeNull();
     }
 
-    /// <summary>TC-02: Reject empty product title</summary>
+    /// <summary>TC-03: Single-character title is valid (minimum length).</summary>
     [Fact]
-    public void ValidateTitle_WithEmptyTitle_ReturnsError()
+    public void ValidateTitle_SingleCharacter_ReturnsNull()
     {
-        // Arrange
-        var title = "";
+        var error = _validator.ValidateTitle("A");
 
-        // Act
+        error.Should().BeNull();
+    }
+
+    /// <summary>TC-04: Title at maximum length (500 characters) is valid.</summary>
+    [Fact]
+    public void ValidateTitle_AtMaximumLength_ReturnsNull()
+    {
+        var error = _validator.ValidateTitle(new string('A', 500));
+
+        error.Should().BeNull();
+    }
+
+    /// <summary>TC-02/TC-05: Reject empty, null, whitespace-only, and overlong titles.</summary>
+    [Theory]
+    [InlineData("",    "required")]   // TC-02: empty string
+    [InlineData(null,  "required")]   // null title
+    [InlineData("   ", "required")]   // whitespace-only (treated the same as empty)
+    public void ValidateTitle_RequiredViolation_ReturnsError(string? title, string expectedFragment)
+    {
         var error = _validator.ValidateTitle(title);
 
-        // Assert
         error.Should().NotBeNullOrEmpty();
-        error.Should().Contain("required");
+        error.Should().Contain(expectedFragment);
     }
 
-    /// <summary>TC-03: Accept minimum title length (1 character)</summary>
-    [Fact]
-    public void ValidateTitle_WithOneCharacter_ReturnsNull()
-    {
-        // Arrange
-        var title = "A";
-
-        // Act
-        var error = _validator.ValidateTitle(title);
-
-        // Assert
-        error.Should().BeNull();
-    }
-
-    /// <summary>TC-04: Accept maximum title length (500 characters)</summary>
-    [Fact]
-    public void ValidateTitle_WithMaximumLength_ReturnsNull()
-    {
-        // Arrange
-        var title = new string('A', 500);
-
-        // Act
-        var error = _validator.ValidateTitle(title);
-
-        // Assert
-        error.Should().BeNull();
-    }
-
-    /// <summary>TC-05: Reject title above maximum length (501 characters)</summary>
     [Fact]
     public void ValidateTitle_ExceedsMaximumLength_ReturnsError()
     {
-        // Arrange
-        var title = new string('A', 501);
+        // TC-05: 501 characters — one over the limit
+        var error = _validator.ValidateTitle(new string('A', 501));
 
-        // Act
-        var error = _validator.ValidateTitle(title);
-
-        // Assert
         error.Should().NotBeNullOrEmpty();
         error.Should().Contain("500");
     }
 
     // =====================================================================
-    // Product Image Dimensions Validation (implicit validation for TC-06-TC-12)
-    // Note: Image format validation (PNG/JPG) is tested in FileUploadValidationTests
+    // Image dimension validation
     // =====================================================================
 
-    /// <summary>Validate product image has positive dimensions</summary>
+    /// <summary>Accept typical positive image dimensions.</summary>
     [Fact]
-    public void ValidateImageDimensions_WithPositiveDimensions_ReturnsNull()
+    public void ValidateImageDimensions_PositiveDimensions_ReturnsNull()
     {
-        // Arrange
-        int width = 800, height = 600;
+        var error = _validator.ValidateImageDimensions(800, 600);
 
-        // Act
-        var error = _validator.ValidateImageDimensions(width, height);
-
-        // Assert
         error.Should().BeNull();
     }
 
-    /// <summary>Reject image with zero width</summary>
+    /// <summary>Accept minimum valid dimensions (1x1).</summary>
     [Fact]
-    public void ValidateImageDimensions_WithZeroWidth_ReturnsError()
+    public void ValidateImageDimensions_OneByOne_ReturnsNull()
     {
-        // Arrange
-        int width = 0, height = 600;
+        var error = _validator.ValidateImageDimensions(1, 1);
 
-        // Act
-        var error = _validator.ValidateImageDimensions(width, height);
-
-        // Assert
-        error.Should().NotBeNullOrEmpty();
-        error.Should().Contain("positive");
+        error.Should().BeNull();
     }
 
-    /// <summary>Reject image with negative dimensions</summary>
-    [Fact]
-    public void ValidateImageDimensions_WithNegativeDimensions_ReturnsError()
+    /// <summary>Reject zero or negative width or height.</summary>
+    [Theory]
+    [InlineData(0,    600)]   // zero width
+    [InlineData(800,  0)]     // zero height
+    [InlineData(-100, 600)]   // negative width
+    [InlineData(800,  -1)]    // negative height
+    [InlineData(-1,   -1)]    // both negative
+    public void ValidateImageDimensions_NonPositiveDimension_ReturnsError(int width, int height)
     {
-        // Arrange
-        int width = -100, height = 600;
-
-        // Act
         var error = _validator.ValidateImageDimensions(width, height);
 
-        // Assert
         error.Should().NotBeNullOrEmpty();
         error.Should().Contain("positive");
     }

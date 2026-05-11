@@ -276,17 +276,24 @@ npm run test:bail      # stop on first failure
 | 02 Techniques | 1 | All six slug names present in DB |
 | 03 Products – Read | 2 | `GET` all (200), `GET` missing ID (404) |
 | 04 Products – CRUD | 6 | Create → read → update with zone → reject out-of-bounds zone (400) → reject unknown technique (400) → export JSON |
-| 05 Print Zones – CRUD | 8 | List, get by ID, create, update, verify update persisted, delete, verify deleted (404), missing product (404) |
-| 06 Logo Upload | 2 | PNG upload (200), unsupported file type (400) |
+| 05 Print Zones – CRUD | 8 | List, get by ID, create, update (verifies name/size/maxColors/techniques), delete, verify deleted (404), missing product (404) |
+| 06 Logo Upload | 3 | PNG upload (200) → fetch uploaded file via `GET /api/files/…` (200, correct Content-Type) → unsupported file type (400) |
 | 07 Product Import | 4 | Import JSON → verify in DB → reject wrong file type (400) → delete (cleanup) |
 | 08 Cleanup | 2 | Delete test product → verify 404 |
-| 09 Auth Guard | 5 | Every write endpoint returns 401 when no JWT is provided |
+| 09 Auth Guard | 7 | Every write endpoint (create/update/delete product, create zone, delete zone, export JSON, import) returns 401 with no JWT |
+| 10 PNG Export | 7 | Setup (product + zone + logo upload) → valid export (200, PNG) → missing background URL (400) → empty placements (400) → text-only placement (200) → multiple placements (200) → unknown logo ID (400) |
+| 11 PDF Export | 4 | Setup reused → one-page PDF (200) → two-page PDF (200) → empty pages array (400) → cleanup |
+| 12 Logo Upload – Formats | 3 | JPG upload (200) → SVG upload (200) → WEBP rejected (400) |
+| 13 Auth – Invalid Token | 1 | Malformed Bearer token returns 401 |
+| 14 Boundary Values | 12 | Title: empty (400), 1-char (201), 500-char (201), 501-char (400); zone name: empty (400), 200-char (201), 201-char (400); coordinates: origin (201), negative X (400), negative Y (400); dimensions: 1×1 (201), zero width (400), zero height (400); cleanup of all created products |
+| 15 Import Validation | 2 | `.txt` extension rejected (400); malformed JSON content rejected (400) |
+| 16 Midocean Adapted Endpoints | 3 | `GET /as-products` returns non-empty array with correct shape; `GET /{id}/as-product` returns product with print zones; non-existent ID returns 404 |
 
 #### Notes
 
 - Tests create and delete their own data; they do not depend on seed data being present.
-- If a run is interrupted mid-way the test product may remain in the DB. Delete it manually via Swagger (`DELETE /api/products/{id}`) before re-running.
-- The `results/` and `fixtures/test-image.png` are git-ignored.
+- If a run is interrupted mid-way, test products may remain in the DB. Delete them manually via Swagger (`DELETE /api/products/{id}`) before re-running.
+- The `results/` folder and generated fixture files (`fixtures/test-image.*`, `fixtures/import-*.json`) are git-ignored.
 
 ---
 

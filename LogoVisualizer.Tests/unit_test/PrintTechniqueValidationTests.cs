@@ -14,143 +14,129 @@ public class PrintTechniqueValidationTests
 
     private readonly Dictionary<string, int> _knownTechniques = new()
     {
-        { "screen_print", 1 },
-        { "embroidery", 2 },
-        { "sublimation", 3 },
-        { "engraving", 4 },
+        { "screen_print",  1 },
+        { "embroidery",    2 },
+        { "sublimation",   3 },
+        { "engraving",     4 },
         { "digital_print", 5 },
-        { "pad_print", 6 }
+        { "pad_print",     6 }
     };
 
     // =====================================================================
-    // Print Technique Validation (TC-29 to TC-33)
+    // Single technique — valid
     // =====================================================================
 
-    /// <summary>TC-29: Accept existing print technique (screen_print)</summary>
-    [Fact]
-    public void ValidateTechniqueName_WithExistingTechnique_ReturnsValid()
+    /// <summary>TC-29: Every known technique name resolves to its correct ID.</summary>
+    [Theory]
+    [InlineData("screen_print",  1)]
+    [InlineData("embroidery",    2)]
+    [InlineData("sublimation",   3)]
+    [InlineData("engraving",     4)]
+    [InlineData("digital_print", 5)]
+    [InlineData("pad_print",     6)]
+    public void ValidateTechniqueName_AllKnownTechniques_ReturnCorrectId(string name, int expectedId)
     {
-        // Arrange
-        var techniqueName = "screen_print";
+        var (isValid, techniqueId, error) = _validator.ValidateTechniqueName(name, _knownTechniques);
 
-        // Act
-        var (isValid, techniqueId, error) = _validator.ValidateTechniqueName(techniqueName, _knownTechniques);
-
-        // Assert
         isValid.Should().BeTrue();
-        techniqueId.Should().Be(1);
+        techniqueId.Should().Be(expectedId);
         error.Should().BeNull();
     }
 
-    /// <summary>TC-30: Reject unknown print technique (laser_cut)</summary>
-    [Fact]
-    public void ValidateTechniqueName_WithUnknownTechnique_ReturnsInvalid()
+    /// <summary>Technique lookup is case-insensitive.</summary>
+    [Theory]
+    [InlineData("SCREEN_PRINT")]
+    [InlineData("Screen_Print")]
+    [InlineData("EMBROIDERY")]
+    public void ValidateTechniqueName_CaseVariants_ReturnsValid(string name)
     {
-        // Arrange
-        var techniqueName = "laser_cut";
+        var (isValid, _, error) = _validator.ValidateTechniqueName(name, _knownTechniques);
 
-        // Act
-        var (isValid, techniqueId, error) = _validator.ValidateTechniqueName(techniqueName, _knownTechniques);
+        isValid.Should().BeTrue();
+        error.Should().BeNull();
+    }
 
-        // Assert
+    // =====================================================================
+    // Single technique — invalid
+    // =====================================================================
+
+    /// <summary>TC-30: Unknown technique name is rejected.</summary>
+    [Fact]
+    public void ValidateTechniqueName_UnknownTechnique_ReturnsInvalid()
+    {
+        var (isValid, techniqueId, error) = _validator.ValidateTechniqueName("laser_cut", _knownTechniques);
+
         isValid.Should().BeFalse();
         techniqueId.Should().Be(0);
         error.Should().NotBeNullOrEmpty();
         error.Should().Contain("Unknown");
     }
 
-    /// <summary>TC-31: Accept one allowed technique</summary>
-    [Fact]
-    public void ValidateTechniqueNames_WithSingleTechnique_ReturnsValidId()
+    /// <summary>Null, empty, and whitespace-only names are all rejected.</summary>
+    [Theory]
+    [InlineData(null)]
+    [InlineData("")]
+    [InlineData("   ")]
+    public void ValidateTechniqueName_NullOrEmpty_ReturnsInvalid(string? name)
     {
-        // Arrange
-        var techniques = new[] { "screen_print" };
+        var (isValid, _, error) = _validator.ValidateTechniqueName(name, _knownTechniques);
 
-        // Act
-        var (ids, errors) = _validator.ValidateTechniqueNames(techniques, _knownTechniques);
-
-        // Assert
-        ids.Should().HaveCount(1);
-        ids.Should().Contain(1);
-        errors.Should().BeEmpty();
-    }
-
-    /// <summary>TC-32: Accept multiple allowed techniques</summary>
-    [Fact]
-    public void ValidateTechniqueNames_WithMultipleTechniques_ReturnsAllValidIds()
-    {
-        // Arrange
-        var techniques = new[] { "screen_print", "embroidery" };
-
-        // Act
-        var (ids, errors) = _validator.ValidateTechniqueNames(techniques, _knownTechniques);
-
-        // Assert
-        ids.Should().HaveCount(2);
-        ids.Should().Contain(new[] { 1, 2 });
-        errors.Should().BeEmpty();
-    }
-
-    /// <summary>TC-33: Handle empty allowed techniques list (valid edge case)</summary>
-    [Fact]
-    public void ValidateTechniqueNames_WithEmptyList_ReturnsEmpty()
-    {
-        // Arrange
-        var techniques = new string[] { };
-
-        // Act
-        var (ids, errors) = _validator.ValidateTechniqueNames(techniques, _knownTechniques);
-
-        // Assert
-        ids.Should().BeEmpty();
-        errors.Should().BeEmpty();
-    }
-
-    /// <summary>Handle case-insensitive technique names</summary>
-    [Fact]
-    public void ValidateTechniqueName_CaseInsensitive_ReturnsValid()
-    {
-        // Arrange
-        var techniqueName = "SCREEN_PRINT";
-
-        // Act
-        var (isValid, techniqueId, error) = _validator.ValidateTechniqueName(techniqueName, _knownTechniques);
-
-        // Assert
-        isValid.Should().BeTrue();
-        techniqueId.Should().Be(1);
-        error.Should().BeNull();
-    }
-
-    /// <summary>Reject null technique name</summary>
-    [Fact]
-    public void ValidateTechniqueName_WithNull_ReturnsInvalid()
-    {
-        // Arrange
-        string? techniqueName = null;
-
-        // Act
-        var (isValid, techniqueId, error) = _validator.ValidateTechniqueName(techniqueName, _knownTechniques);
-
-        // Assert
         isValid.Should().BeFalse();
         error.Should().NotBeNullOrEmpty();
     }
 
-    /// <summary>Reject mixed valid/invalid techniques</summary>
+    // =====================================================================
+    // Multiple techniques
+    // =====================================================================
+
+    /// <summary>TC-31: Single valid technique resolves correctly.</summary>
     [Fact]
-    public void ValidateTechniqueNames_WithMixedValidInvalid_ReturnsOnlyValid()
+    public void ValidateTechniqueNames_SingleTechnique_ReturnsOneId()
     {
-        // Arrange
-        var techniques = new[] { "screen_print", "laser_cut", "embroidery" };
+        var (ids, errors) = _validator.ValidateTechniqueNames(["screen_print"], _knownTechniques);
 
-        // Act
-        var (ids, errors) = _validator.ValidateTechniqueNames(techniques, _knownTechniques);
+        ids.Should().ContainSingle().Which.Should().Be(1);
+        errors.Should().BeEmpty();
+    }
 
-        // Assert
-        ids.Should().HaveCount(2);
-        ids.Should().Contain(new[] { 1, 2 });
+    /// <summary>TC-32: Multiple valid techniques all resolve.</summary>
+    [Fact]
+    public void ValidateTechniqueNames_MultipleTechniques_ReturnsAllIds()
+    {
+        var (ids, errors) = _validator.ValidateTechniqueNames(["screen_print", "embroidery"], _knownTechniques);
+
+        ids.Should().BeEquivalentTo(new[] { 1, 2 });
+        errors.Should().BeEmpty();
+    }
+
+    /// <summary>TC-33: Empty list is valid — returns no IDs and no errors.</summary>
+    [Fact]
+    public void ValidateTechniqueNames_EmptyList_ReturnsEmpty()
+    {
+        var (ids, errors) = _validator.ValidateTechniqueNames([], _knownTechniques);
+
+        ids.Should().BeEmpty();
+        errors.Should().BeEmpty();
+    }
+
+    /// <summary>Mixed valid/invalid list: valid IDs are returned, one error per invalid name.</summary>
+    [Fact]
+    public void ValidateTechniqueNames_MixedList_ReturnsValidIdsAndOneErrorPerInvalidName()
+    {
+        var (ids, errors) = _validator.ValidateTechniqueNames(["screen_print", "laser_cut", "embroidery"], _knownTechniques);
+
+        ids.Should().BeEquivalentTo(new[] { 1, 2 });
         errors.Should().HaveCount(1);
         errors.First().Should().Contain("laser_cut");
+    }
+
+    /// <summary>All-invalid list returns no IDs and an error per entry.</summary>
+    [Fact]
+    public void ValidateTechniqueNames_AllInvalid_ReturnsNoIdsAndAllErrors()
+    {
+        var (ids, errors) = _validator.ValidateTechniqueNames(["laser_cut", "3d_print"], _knownTechniques);
+
+        ids.Should().BeEmpty();
+        errors.Should().HaveCount(2);
     }
 }

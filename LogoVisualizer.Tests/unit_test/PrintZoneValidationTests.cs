@@ -13,269 +13,147 @@ public class PrintZoneValidationTests
     private readonly PrintZoneValidator _validator = new();
 
     // =====================================================================
-    // Print Zone Name Validation (TC-13 to TC-16)
+    // Name validation (TC-13 to TC-16)
     // =====================================================================
 
-    /// <summary>TC-13: Accept valid print zone name</summary>
+    /// <summary>TC-13: Accept valid print zone name.</summary>
     [Fact]
     public void ValidateName_WithValidName_ReturnsNull()
     {
-        // Arrange
-        var name = "Front";
+        var error = _validator.ValidateName("Front");
 
-        // Act
-        var error = _validator.ValidateName(name);
-
-        // Assert
         error.Should().BeNull();
     }
 
-    /// <summary>TC-14: Reject empty print zone name</summary>
-    [Fact]
-    public void ValidateName_WithEmptyName_ReturnsError()
+    /// <summary>TC-14: Reject empty, null, and whitespace-only names.</summary>
+    [Theory]
+    [InlineData("")]
+    [InlineData(null)]
+    [InlineData("   ")]
+    public void ValidateName_NullOrWhitespace_ReturnsError(string? name)
     {
-        // Arrange
-        var name = "";
-
-        // Act
         var error = _validator.ValidateName(name);
 
-        // Assert
         error.Should().NotBeNullOrEmpty();
         error.Should().Contain("required");
     }
 
-    /// <summary>TC-15: Accept maximum length zone name (200 characters)</summary>
+    /// <summary>TC-15: Accept maximum allowed name length (200 characters).</summary>
     [Fact]
-    public void ValidateName_WithMaximumLength_ReturnsNull()
+    public void ValidateName_AtMaximumLength_ReturnsNull()
     {
-        // Arrange
-        var name = new string('A', 200);
+        var error = _validator.ValidateName(new string('A', 200));
 
-        // Act
-        var error = _validator.ValidateName(name);
-
-        // Assert
         error.Should().BeNull();
     }
 
-    /// <summary>TC-16: Reject zone name above maximum length (201 characters)</summary>
+    /// <summary>TC-16: Reject name that exceeds maximum length (201 characters).</summary>
     [Fact]
     public void ValidateName_ExceedsMaximumLength_ReturnsError()
     {
-        // Arrange
-        var name = new string('A', 201);
+        var error = _validator.ValidateName(new string('A', 201));
 
-        // Act
-        var error = _validator.ValidateName(name);
-
-        // Assert
         error.Should().NotBeNullOrEmpty();
         error.Should().Contain("200");
     }
 
     // =====================================================================
-    // Print Zone Coordinates Validation (TC-17 to TC-20)
+    // Coordinate validation (TC-17 to TC-20)
     // =====================================================================
 
-    /// <summary>TC-17: Accept coordinates at origin (0, 0)</summary>
+    /// <summary>TC-17: Accept coordinates at origin (0, 0).</summary>
     [Fact]
     public void ValidateCoordinates_AtOrigin_ReturnsNull()
     {
-        // Arrange
-        int x = 0, y = 0;
+        var error = _validator.ValidateCoordinates(0, 0);
 
-        // Act
-        var error = _validator.ValidateCoordinates(x, y);
-
-        // Assert
         error.Should().BeNull();
     }
 
-    /// <summary>TC-18: Accept positive coordinates</summary>
+    /// <summary>TC-18: Accept positive coordinates.</summary>
     [Fact]
-    public void ValidateCoordinates_WithPositiveValues_ReturnsNull()
+    public void ValidateCoordinates_PositiveValues_ReturnsNull()
     {
-        // Arrange
-        int x = 50, y = 50;
+        var error = _validator.ValidateCoordinates(50, 50);
 
-        // Act
-        var error = _validator.ValidateCoordinates(x, y);
-
-        // Assert
         error.Should().BeNull();
     }
 
-    /// <summary>TC-19: Reject negative X coordinate</summary>
-    [Fact]
-    public void ValidateCoordinates_WithNegativeX_ReturnsError()
+    /// <summary>TC-19/TC-20: Reject any negative coordinate.</summary>
+    [Theory]
+    [InlineData(-1, 0)]   // negative X only
+    [InlineData(0, -1)]   // negative Y only
+    [InlineData(-5, -5)]  // both negative
+    public void ValidateCoordinates_NegativeValue_ReturnsError(int x, int y)
     {
-        // Arrange
-        int x = -1, y = 0;
-
-        // Act
         var error = _validator.ValidateCoordinates(x, y);
 
-        // Assert
-        error.Should().NotBeNullOrEmpty();
-        error.Should().Contain("non-negative");
-    }
-
-    /// <summary>TC-20: Reject negative Y coordinate</summary>
-    [Fact]
-    public void ValidateCoordinates_WithNegativeY_ReturnsError()
-    {
-        // Arrange
-        int x = 0, y = -1;
-
-        // Act
-        var error = _validator.ValidateCoordinates(x, y);
-
-        // Assert
         error.Should().NotBeNullOrEmpty();
         error.Should().Contain("non-negative");
     }
 
     // =====================================================================
-    // Print Zone Size Validation (TC-21 to TC-24)
+    // Size validation (TC-21 to TC-24)
     // =====================================================================
 
-    /// <summary>TC-21: Accept minimum valid zone size (1x1)</summary>
+    /// <summary>TC-21: Accept minimum valid zone size (1x1).</summary>
     [Fact]
-    public void ValidateSize_WithMinimumDimensions_ReturnsNull()
+    public void ValidateSize_MinimumDimensions_ReturnsNull()
     {
-        // Arrange
-        int width = 1, height = 1;
+        var error = _validator.ValidateSize(1, 1);
 
-        // Act
-        var error = _validator.ValidateSize(width, height);
-
-        // Assert
         error.Should().BeNull();
     }
 
-    /// <summary>TC-22: Accept normal zone size</summary>
+    /// <summary>TC-22: Accept normal zone dimensions.</summary>
     [Fact]
-    public void ValidateSize_WithNormalDimensions_ReturnsNull()
+    public void ValidateSize_NormalDimensions_ReturnsNull()
     {
-        // Arrange
-        int width = 100, height = 100;
+        var error = _validator.ValidateSize(100, 100);
 
-        // Act
-        var error = _validator.ValidateSize(width, height);
-
-        // Assert
         error.Should().BeNull();
     }
 
-    /// <summary>TC-23: Reject zero width</summary>
-    [Fact]
-    public void ValidateSize_WithZeroWidth_ReturnsError()
+    /// <summary>TC-23/TC-24: Reject zero or negative width/height.</summary>
+    [Theory]
+    [InlineData(0,   100)]  // zero width
+    [InlineData(100, 0)]    // zero height
+    [InlineData(-1,  100)]  // negative width
+    [InlineData(100, -1)]   // negative height
+    public void ValidateSize_NonPositiveDimension_ReturnsError(int width, int height)
     {
-        // Arrange
-        int width = 0, height = 100;
-
-        // Act
         var error = _validator.ValidateSize(width, height);
 
-        // Assert
-        error.Should().NotBeNullOrEmpty();
-        error.Should().Contain("positive");
-    }
-
-    /// <summary>TC-24: Reject zero height</summary>
-    [Fact]
-    public void ValidateSize_WithZeroHeight_ReturnsError()
-    {
-        // Arrange
-        int width = 100, height = 0;
-
-        // Act
-        var error = _validator.ValidateSize(width, height);
-
-        // Assert
         error.Should().NotBeNullOrEmpty();
         error.Should().Contain("positive");
     }
 
     // =====================================================================
-    // Print Zone Bounds Validation (TC-25 to TC-28)
+    // Bounds validation (TC-25 to TC-28)
     // =====================================================================
 
-    /// <summary>TC-25: Accept zone exactly inside image width</summary>
-    [Fact]
-    public void ValidateBounds_ExactlyAtImageBounds_ReturnsNull()
+    /// <summary>TC-25/TC-27: Accept zone that fits exactly inside image dimensions.</summary>
+    [Theory]
+    [InlineData(900, 0,   100, 100, 1000, 1000)]  // touching right edge
+    [InlineData(0,   900, 100, 100, 1000, 1000)]  // touching bottom edge
+    [InlineData(900, 900, 100, 100, 1000, 1000)]  // touching both edges
+    [InlineData(0,   0,   500, 500, 1000, 1000)]  // centred, well within bounds
+    public void ValidateBounds_WithinImageBounds_ReturnsNull(int x, int y, int width, int height, int imgW, int imgH)
     {
-        // Arrange
-        int x = 900, y = 900, width = 100, height = 100;
-        int imageWidth = 1000, imageHeight = 1000;
+        var error = _validator.ValidateBounds(x, y, width, height, imgW, imgH);
 
-        // Act
-        var error = _validator.ValidateBounds(x, y, width, height, imageWidth, imageHeight);
-
-        // Assert
         error.Should().BeNull();
     }
 
-    /// <summary>TC-26: Reject zone exceeding image width by 1px</summary>
-    [Fact]
-    public void ValidateBounds_ExceedsImageWidthByOnePx_ReturnsError()
+    /// <summary>TC-26/TC-28: Reject zone that overflows image dimensions by even one pixel.</summary>
+    [Theory]
+    [InlineData(901, 0,   100, 100, 1000, 1000)]  // overflows right by 1 px
+    [InlineData(0,   901, 100, 100, 1000, 1000)]  // overflows bottom by 1 px
+    public void ValidateBounds_ExceedingImageBounds_ReturnsError(int x, int y, int width, int height, int imgW, int imgH)
     {
-        // Arrange
-        int x = 901, y = 0, width = 100, height = 100;
-        int imageWidth = 1000, imageHeight = 1000;
+        var error = _validator.ValidateBounds(x, y, width, height, imgW, imgH);
 
-        // Act
-        var error = _validator.ValidateBounds(x, y, width, height, imageWidth, imageHeight);
-
-        // Assert
         error.Should().NotBeNullOrEmpty();
         error.Should().Contain("bounds");
-    }
-
-    /// <summary>TC-27: Accept zone exactly inside image height</summary>
-    [Fact]
-    public void ValidateBounds_WithinImageHeight_ReturnsNull()
-    {
-        // Arrange
-        int x = 0, y = 900, width = 100, height = 100;
-        int imageWidth = 1000, imageHeight = 1000;
-
-        // Act
-        var error = _validator.ValidateBounds(x, y, width, height, imageWidth, imageHeight);
-
-        // Assert
-        error.Should().BeNull();
-    }
-
-    /// <summary>TC-28: Reject zone exceeding image height by 1px</summary>
-    [Fact]
-    public void ValidateBounds_ExceedsImageHeightByOnePx_ReturnsError()
-    {
-        // Arrange
-        int x = 0, y = 901, width = 100, height = 100;
-        int imageWidth = 1000, imageHeight = 1000;
-
-        // Act
-        var error = _validator.ValidateBounds(x, y, width, height, imageWidth, imageHeight);
-
-        // Assert
-        error.Should().NotBeNullOrEmpty();
-        error.Should().Contain("bounds");
-    }
-
-    /// <summary>Zone at origin with positive dimensions fits image</summary>
-    [Fact]
-    public void ValidateBounds_AllZeroOriginWithinImage_ReturnsNull()
-    {
-        // Arrange
-        int x = 0, y = 0, width = 500, height = 500;
-        int imageWidth = 1000, imageHeight = 1000;
-
-        // Act
-        var error = _validator.ValidateBounds(x, y, width, height, imageWidth, imageHeight);
-
-        // Assert
-        error.Should().BeNull();
     }
 }

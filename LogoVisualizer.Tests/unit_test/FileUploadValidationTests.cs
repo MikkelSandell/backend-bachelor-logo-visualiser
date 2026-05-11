@@ -13,406 +13,200 @@ public class FileUploadValidationTests
 {
     private readonly FileValidator _validator = new();
 
-    // =====================================================================
-    // Product Image File Type Validation (TC-06 to TC-08)
-    // =====================================================================
-
-    /// <summary>TC-06: Accept PNG product image</summary>
-    [Fact]
-    public void ValidateContentType_WithPng_ReturnsNull()
-    {
-        // Arrange
-        var contentType = "image/png";
-        var allowedTypes = new[] { "image/png", "image/jpeg" };
-
-        // Act
-        var error = _validator.ValidateContentType(contentType, allowedTypes);
-
-        // Assert
-        error.Should().BeNull();
-    }
-
-    /// <summary>TC-07: Accept JPG product image</summary>
-    [Fact]
-    public void ValidateContentType_WithJpeg_ReturnsNull()
-    {
-        // Arrange
-        var contentType = "image/jpeg";
-        var allowedTypes = new[] { "image/png", "image/jpeg" };
-
-        // Act
-        var error = _validator.ValidateContentType(contentType, allowedTypes);
-
-        // Assert
-        error.Should().BeNull();
-    }
-
-    /// <summary>TC-08: Reject unsupported product image (GIF)</summary>
-    [Fact]
-    public void ValidateContentType_WithGif_ReturnsError()
-    {
-        // Arrange
-        var contentType = "image/gif";
-        var allowedTypes = new[] { "image/png", "image/jpeg" };
-
-        // Act
-        var error = _validator.ValidateContentType(contentType, allowedTypes);
-
-        // Assert
-        error.Should().NotBeNullOrEmpty();
-        error.Should().Contain("Unsupported");
-    }
-
-    // =====================================================================
-    // Product Image Size Validation (TC-09 to TC-12)
-    // =====================================================================
-
     private const long MaxProductImageSize = 10_485_760; // 10 MB
-
-    /// <summary>TC-09: Accept product image below max size (10MB - 1 byte)</summary>
-    [Fact]
-    public void ValidateFileSize_JustBelowMaximum_ReturnsNull()
-    {
-        // Arrange
-        var fileSizeBytes = MaxProductImageSize - 1;
-
-        // Act
-        var error = _validator.ValidateFileSize(fileSizeBytes, MaxProductImageSize);
-
-        // Assert
-        error.Should().BeNull();
-    }
-
-    /// <summary>TC-10: Accept product image at max size (10MB)</summary>
-    [Fact]
-    public void ValidateFileSize_AtMaximum_ReturnsNull()
-    {
-        // Arrange
-        var fileSizeBytes = MaxProductImageSize;
-
-        // Act
-        var error = _validator.ValidateFileSize(fileSizeBytes, MaxProductImageSize);
-
-        // Assert
-        error.Should().BeNull();
-    }
-
-    /// <summary>TC-11: Reject product image above max size (10MB + 1 byte)</summary>
-    [Fact]
-    public void ValidateFileSize_JustAboveMaximum_ReturnsError()
-    {
-        // Arrange
-        var fileSizeBytes = MaxProductImageSize + 1;
-
-        // Act
-        var error = _validator.ValidateFileSize(fileSizeBytes, MaxProductImageSize);
-
-        // Assert
-        error.Should().NotBeNullOrEmpty();
-        error.Should().Contain("exceeds");
-    }
-
-    /// <summary>TC-12: Reject empty product image file (0 bytes)</summary>
-    [Fact]
-    public void ValidateFileNotEmpty_WithZeroBytes_ReturnsError()
-    {
-        // Arrange
-        var fileSizeBytes = 0L;
-
-        // Act
-        var error = _validator.ValidateFileNotEmpty(fileSizeBytes);
-
-        // Assert
-        error.Should().NotBeNullOrEmpty();
-        error.Should().Contain("empty");
-    }
+    private const long MaxLogoSize         = 10_485_760; // 10 MB
+    private const long MaxImportFileSize   =  5_242_880; //  5 MB
 
     // =====================================================================
-    // Logo Upload File Type Validation (TC-34 to TC-37)
+    // Content type — accepted types
     // =====================================================================
 
-    /// <summary>TC-34: Accept PNG logo</summary>
-    [Fact]
-    public void ValidateContentType_LogoPng_ReturnsNull()
+    /// <summary>TC-06/TC-07: Accept PNG and JPEG product images</summary>
+    [Theory]
+    [InlineData("image/png")]
+    [InlineData("image/jpeg")]
+    public void ValidateContentType_AllowedProductImageType_ReturnsNull(string contentType)
     {
-        // Arrange
-        var contentType = "image/png";
-        var logoAllowedTypes = new[] { "image/png", "image/jpeg", "image/svg+xml" };
+        var error = _validator.ValidateContentType(contentType, ["image/png", "image/jpeg"]);
 
-        // Act
-        var error = _validator.ValidateContentType(contentType, logoAllowedTypes);
-
-        // Assert
         error.Should().BeNull();
     }
 
-    /// <summary>TC-35: Accept JPG logo</summary>
-    [Fact]
-    public void ValidateContentType_LogoJpeg_ReturnsNull()
+    /// <summary>TC-34 to TC-36: Accept PNG, JPEG, and SVG logo types</summary>
+    [Theory]
+    [InlineData("image/png")]
+    [InlineData("image/jpeg")]
+    [InlineData("image/svg+xml")]
+    public void ValidateContentType_AllowedLogoType_ReturnsNull(string contentType)
     {
-        // Arrange
-        var contentType = "image/jpeg";
-        var logoAllowedTypes = new[] { "image/png", "image/jpeg", "image/svg+xml" };
+        var error = _validator.ValidateContentType(contentType, ["image/png", "image/jpeg", "image/svg+xml"]);
 
-        // Act
-        var error = _validator.ValidateContentType(contentType, logoAllowedTypes);
-
-        // Assert
         error.Should().BeNull();
     }
 
-    /// <summary>TC-36: Accept SVG logo</summary>
-    [Fact]
-    public void ValidateContentType_LogoSvg_ReturnsNull()
-    {
-        // Arrange
-        var contentType = "image/svg+xml";
-        var logoAllowedTypes = new[] { "image/png", "image/jpeg", "image/svg+xml" };
-
-        // Act
-        var error = _validator.ValidateContentType(contentType, logoAllowedTypes);
-
-        // Assert
-        error.Should().BeNull();
-    }
-
-    /// <summary>TC-37: Reject unsupported WEBP logo</summary>
-    [Fact]
-    public void ValidateContentType_LogoWebp_ReturnsError()
-    {
-        // Arrange
-        var contentType = "image/webp";
-        var logoAllowedTypes = new[] { "image/png", "image/jpeg", "image/svg+xml" };
-
-        // Act
-        var error = _validator.ValidateContentType(contentType, logoAllowedTypes);
-
-        // Assert
-        error.Should().NotBeNullOrEmpty();
-        error.Should().Contain("Unsupported");
-    }
-
-    // =====================================================================
-    // Logo Upload Size Validation (TC-38 to TC-41)
-    // =====================================================================
-
-    private const long MaxLogoSize = 10_485_760; // 10 MB
-
-    /// <summary>TC-38: Accept logo below max size (10MB - 1 byte)</summary>
-    [Fact]
-    public void ValidateFileSize_LogoBelowMaximum_ReturnsNull()
-    {
-        // Arrange
-        var fileSizeBytes = MaxLogoSize - 1;
-
-        // Act
-        var error = _validator.ValidateFileSize(fileSizeBytes, MaxLogoSize);
-
-        // Assert
-        error.Should().BeNull();
-    }
-
-    /// <summary>TC-39: Accept logo at max size (10MB)</summary>
-    [Fact]
-    public void ValidateFileSize_LogoAtMaximum_ReturnsNull()
-    {
-        // Arrange
-        var fileSizeBytes = MaxLogoSize;
-
-        // Act
-        var error = _validator.ValidateFileSize(fileSizeBytes, MaxLogoSize);
-
-        // Assert
-        error.Should().BeNull();
-    }
-
-    /// <summary>TC-40: Reject logo above max size (10MB + 1 byte)</summary>
-    [Fact]
-    public void ValidateFileSize_LogoAboveMaximum_ReturnsError()
-    {
-        // Arrange
-        var fileSizeBytes = MaxLogoSize + 1;
-
-        // Act
-        var error = _validator.ValidateFileSize(fileSizeBytes, MaxLogoSize);
-
-        // Assert
-        error.Should().NotBeNullOrEmpty();
-        error.Should().Contain("exceeds");
-    }
-
-    /// <summary>TC-41: Reject empty logo file (0 bytes)</summary>
-    [Fact]
-    public void ValidateFileNotEmpty_LogoEmpty_ReturnsError()
-    {
-        // Arrange
-        var fileSizeBytes = 0L;
-
-        // Act
-        var error = _validator.ValidateFileNotEmpty(fileSizeBytes);
-
-        // Assert
-        error.Should().NotBeNullOrEmpty();
-        error.Should().Contain("empty");
-    }
-
-    // =====================================================================
-    // Product Import Validation (TC-42 to TC-48)
-    // =====================================================================
-
-    private const long MaxImportFileSize = 5_242_880; // 5 MB
-
-    /// <summary>TC-42: Accept valid JSON import file (file extension validated in controller)</summary>
+    /// <summary>TC-42: Accept application/json for import</summary>
     [Fact]
     public void ValidateContentType_JsonImport_ReturnsNull()
     {
-        // Arrange
-        var contentType = "application/json";
-        var allowedTypes = new[] { "application/json" };
+        var error = _validator.ValidateContentType("application/json", ["application/json"]);
 
-        // Act
-        var error = _validator.ValidateContentType(contentType, allowedTypes);
-
-        // Assert
         error.Should().BeNull();
     }
 
-    /// <summary>TC-43: Reject wrong import file extension (tested at controller level - checking JSON content type here)</summary>
+    // =====================================================================
+    // Content type — rejected types
+    // =====================================================================
+
+    /// <summary>TC-08: Reject GIF for product image</summary>
     [Fact]
-    public void ValidateContentType_NonJsonImport_ReturnsError()
+    public void ValidateContentType_Gif_ReturnsError()
     {
-        // Arrange
-        var contentType = "text/plain";
-        var allowedTypes = new[] { "application/json" };
+        var error = _validator.ValidateContentType("image/gif", ["image/png", "image/jpeg"]);
 
-        // Act
-        var error = _validator.ValidateContentType(contentType, allowedTypes);
-
-        // Assert
         error.Should().NotBeNullOrEmpty();
         error.Should().Contain("Unsupported");
     }
 
-    /// <summary>TC-44: Malformed JSON validation (JSON parsing is tested at controller level, not here)</summary>
+    /// <summary>TC-37: Reject WEBP for logo</summary>
     [Fact]
-    public void ValidateContentType_JsonFormat_ValidatorDoesNotParseJson()
+    public void ValidateContentType_Webp_ReturnsError()
     {
-        // Arrange - Note: This validator only checks content-type, not JSON validity
-        // JSON parsing must be tested at controller/service level with actual deserialization
-        var contentType = "application/json";
+        var error = _validator.ValidateContentType("image/webp", ["image/png", "image/jpeg", "image/svg+xml"]);
 
-        // Act
-        var error = _validator.ValidateContentType(contentType, new[] { "application/json" });
-
-        // Assert
-        error.Should().BeNull();  // Validator passes; JSON parsing is separate concern
-    }
-
-    /// <summary>TC-45: Reject empty import file (0 bytes)</summary>
-    [Fact]
-    public void ValidateFileNotEmpty_ImportEmpty_ReturnsError()
-    {
-        // Arrange
-        var fileSizeBytes = 0L;
-
-        // Act
-        var error = _validator.ValidateFileNotEmpty(fileSizeBytes);
-
-        // Assert
         error.Should().NotBeNullOrEmpty();
-        error.Should().Contain("empty");
+        error.Should().Contain("Unsupported");
     }
 
-    /// <summary>TC-46: Accept import file below max size (5MB - 1 byte)</summary>
+    /// <summary>TC-43: Reject plain text for import</summary>
     [Fact]
-    public void ValidateFileSize_ImportBelowMaximum_ReturnsNull()
+    public void ValidateContentType_PlainTextForImport_ReturnsError()
     {
-        // Arrange
-        var fileSizeBytes = MaxImportFileSize - 1;
+        var error = _validator.ValidateContentType("text/plain", ["application/json"]);
 
-        // Act
-        var error = _validator.ValidateFileSize(fileSizeBytes, MaxImportFileSize);
+        error.Should().NotBeNullOrEmpty();
+        error.Should().Contain("Unsupported");
+    }
 
-        // Assert
+    /// <summary>Reject null or empty content type regardless of allowed list</summary>
+    [Theory]
+    [InlineData(null)]
+    [InlineData("")]
+    [InlineData("   ")]
+    public void ValidateContentType_NullOrEmpty_ReturnsError(string? contentType)
+    {
+        var error = _validator.ValidateContentType(contentType, ["image/png"]);
+
+        error.Should().NotBeNullOrEmpty();
+    }
+
+    // =====================================================================
+    // File size validation — covers all three upload contexts
+    // =====================================================================
+
+    // MaxProductImageSize == MaxLogoSize (both 10 MB), so one row covers both contexts.
+    // The import limit (5 MB) is tested as a separate row.
+
+    /// <summary>TC-09/TC-38/TC-46: Accept file one byte below the limit</summary>
+    [Theory]
+    [InlineData(MaxProductImageSize - 1, MaxProductImageSize)]  // covers product image + logo
+    [InlineData(MaxImportFileSize - 1,   MaxImportFileSize)]    // import (5 MB limit)
+    public void ValidateFileSize_OneByteBelowLimit_ReturnsNull(long fileSize, long limit)
+    {
+        var error = _validator.ValidateFileSize(fileSize, limit);
+
         error.Should().BeNull();
     }
 
-    /// <summary>TC-47: Accept import file at max size (5MB)</summary>
-    [Fact]
-    public void ValidateFileSize_ImportAtMaximum_ReturnsNull()
+    /// <summary>TC-10/TC-39/TC-47: Accept file exactly at the limit</summary>
+    [Theory]
+    [InlineData(MaxProductImageSize, MaxProductImageSize)]
+    [InlineData(MaxImportFileSize,   MaxImportFileSize)]
+    public void ValidateFileSize_ExactlyAtLimit_ReturnsNull(long fileSize, long limit)
     {
-        // Arrange
-        var fileSizeBytes = MaxImportFileSize;
+        var error = _validator.ValidateFileSize(fileSize, limit);
 
-        // Act
-        var error = _validator.ValidateFileSize(fileSizeBytes, MaxImportFileSize);
-
-        // Assert
         error.Should().BeNull();
     }
 
-    /// <summary>TC-48: Reject import file above max size (5MB + 1 byte)</summary>
-    [Fact]
-    public void ValidateFileSize_ImportAboveMaximum_ReturnsError()
+    /// <summary>TC-11/TC-40/TC-48: Reject file one byte above the limit</summary>
+    [Theory]
+    [InlineData(MaxProductImageSize + 1, MaxProductImageSize)]
+    [InlineData(MaxImportFileSize + 1,   MaxImportFileSize)]
+    public void ValidateFileSize_OneBytAboveLimit_ReturnsError(long fileSize, long limit)
     {
-        // Arrange
-        var fileSizeBytes = MaxImportFileSize + 1;
+        var error = _validator.ValidateFileSize(fileSize, limit);
 
-        // Act
-        var error = _validator.ValidateFileSize(fileSizeBytes, MaxImportFileSize);
-
-        // Assert
         error.Should().NotBeNullOrEmpty();
         error.Should().Contain("exceeds");
     }
 
     // =====================================================================
-    // File Extension Validation
+    // Empty file validation
     // =====================================================================
 
-    /// <summary>Validate file extension matches content type</summary>
+    /// <summary>TC-12/TC-41/TC-45: Reject empty file (0 bytes)</summary>
     [Fact]
-    public void ValidateFileExtension_PngFileWithPngType_ReturnsNull()
+    public void ValidateFileNotEmpty_ZeroBytes_ReturnsError()
     {
-        // Arrange
-        var fileName = "logo.png";
-        var contentType = "image/png";
+        var error = _validator.ValidateFileNotEmpty(0L);
 
-        // Act
-        var error = _validator.ValidateFileExtension(fileName, contentType);
+        error.Should().NotBeNullOrEmpty();
+        error.Should().Contain("empty");
+    }
 
-        // Assert
+    /// <summary>Reject negative size (defensive check)</summary>
+    [Fact]
+    public void ValidateFileNotEmpty_NegativeSize_ReturnsError()
+    {
+        var error = _validator.ValidateFileNotEmpty(-1L);
+
+        error.Should().NotBeNullOrEmpty();
+        error.Should().Contain("empty");
+    }
+
+    /// <summary>Accept file with at least one byte</summary>
+    [Fact]
+    public void ValidateFileNotEmpty_OneByte_ReturnsNull()
+    {
+        var error = _validator.ValidateFileNotEmpty(1L);
+
         error.Should().BeNull();
     }
 
-    /// <summary>Reject mismatched file extension and content type</summary>
+    // =====================================================================
+    // File extension validation
+    // =====================================================================
+
+    /// <summary>Extension matches content type — accepted cases</summary>
+    [Theory]
+    [InlineData("logo.png",  "image/png")]
+    [InlineData("logo.PNG",  "image/png")]   // case-insensitive
+    [InlineData("logo.jpg",  "image/jpeg")]
+    [InlineData("logo.jpeg", "image/jpeg")]  // both .jpg and .jpeg are valid for image/jpeg
+    [InlineData("logo.svg",  "image/svg+xml")]
+    public void ValidateFileExtension_MatchingExtension_ReturnsNull(string fileName, string contentType)
+    {
+        var error = _validator.ValidateFileExtension(fileName, contentType);
+
+        error.Should().BeNull();
+    }
+
+    /// <summary>Extension does not match content type — rejected</summary>
     [Fact]
     public void ValidateFileExtension_PngFileWithJpegType_ReturnsError()
     {
-        // Arrange
-        var fileName = "logo.png";
-        var contentType = "image/jpeg";
+        var error = _validator.ValidateFileExtension("logo.png", "image/jpeg");
 
-        // Act
-        var error = _validator.ValidateFileExtension(fileName, contentType);
-
-        // Assert
         error.Should().NotBeNullOrEmpty();
         error.Should().Contain("extension does not match");
     }
 
-    /// <summary>Case-insensitive extension validation</summary>
+    /// <summary>Null filename skips validation (returns null)</summary>
     [Fact]
-    public void ValidateFileExtension_UppercaseExtension_ReturnsNull()
+    public void ValidateFileExtension_NullFileName_ReturnsNull()
     {
-        // Arrange
-        var fileName = "logo.PNG";
-        var contentType = "image/png";
+        var error = _validator.ValidateFileExtension(null, "image/png");
 
-        // Act
-        var error = _validator.ValidateFileExtension(fileName, contentType);
-
-        // Assert
         error.Should().BeNull();
     }
 }
