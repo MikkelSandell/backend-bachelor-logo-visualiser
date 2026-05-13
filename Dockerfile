@@ -6,6 +6,7 @@ WORKDIR /src
 COPY ["LogoVisualizer.sln", "./"]
 COPY ["LogoVisualizer.Api/LogoVisualizer.Api.csproj", "LogoVisualizer.Api/"]
 COPY ["LogoVisualizer.Data/LogoVisualizer.Data.csproj", "LogoVisualizer.Data/"]
+COPY ["LogoVisualizer.Tests/unit_test/LogoVisualizer.Tests.csproj", "LogoVisualizer.Tests/unit_test/"]
 
 # Restore dependencies
 RUN dotnet restore "LogoVisualizer.sln"
