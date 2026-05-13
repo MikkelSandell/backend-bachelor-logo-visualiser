@@ -163,7 +163,7 @@ After **any** change to this project, keep the following two documents accurate 
 | `LogoVisualizer.Api/Properties/launchSettings.json` | Forces `ASPNETCORE_ENVIRONMENT=Development`; Swagger always available |
 | `LogoVisualizer.Api/appsettings.Development.json` | Connection string pointing to Docker SQL Server (`localhost,11433;Database=LogoVisualizer`), dev JWT key |
 | `docker-compose.yml` | Starts `mssql` (SQL Server 2022) and `seeder` (one-shot migration + seed container) |
-| `Dockerfile` | Multi-stage build for the API; also used by the seeder service |
+| `Dockerfile` | Multi-stage build for the API; also used by the seeder service. All three `.csproj` files (`Api`, `Data`, `Tests/unit_test`) must be copied before `dotnet restore` to avoid a missing-project error during `docker compose build`. |
 | `LogoVisualizer.Data/AppDbContext.cs` | EF model config, index constraints, technique seed data |
 | `LogoVisualizer.Data/Repositories/` | `IProductRepository`, `IPrintZoneRepository` + implementations |
 | `LogoVisualizer.Api/Controllers/AuthController.cs` | `POST /api/auth/dev-token` — issues dev JWT (Development only) |
