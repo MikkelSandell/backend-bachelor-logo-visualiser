@@ -24,6 +24,11 @@ builder.Services.AddScoped<IProductRepository, ProductRepository>();
 builder.Services.AddScoped<IPrintZoneRepository, PrintZoneRepository>();
 
 // ---------------------------------------------------------------------------
+// Validators
+// ---------------------------------------------------------------------------
+builder.Services.AddScoped<IProductValidator, ProductValidator>();
+
+// ---------------------------------------------------------------------------
 // Midocean sample data (loaded once from JSON at startup)
 // ---------------------------------------------------------------------------
 builder.Services.AddSingleton<IMidoceanProductService, MidoceanProductService>();

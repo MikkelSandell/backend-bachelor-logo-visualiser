@@ -1,4 +1,5 @@
 using LogoVisualizer.Api.DTOs;
+using LogoVisualizer.Api.Helpers;
 using LogoVisualizer.Api.Services;
 using Microsoft.AspNetCore.Mvc;
 using QuestPDF.Fluent;
@@ -142,13 +143,21 @@ public class ExportController : ControllerBase
             // Composite each logo in order
             foreach (var (logoPath, placement) in resolved)
             {
+                var zone = product.PrintZones.First(z => z.Id == placement.ZoneId);
+                var renderRect = await CalculateRenderRectAsync(logoPath, zone, ct);
+
                 using var logoImage = await LoadLogoImageForCompositingAsync(
                     logoPath,
-                    placement.LogoWidth,
-                    placement.LogoHeight,
+                    renderRect.Width,
+                    renderRect.Height,
                     ct);
+
+                PrintTechniqueColorModeHelper.ApplyColorModeForTechnique(
+                    logoImage,
+                    placement.SelectedTechniqueName);
+
                 productImage.Mutate(ctx =>
-                    ctx.DrawImage(logoImage, new Point(placement.LogoX, placement.LogoY), 1f));
+                    ctx.DrawImage(logoImage, new Point(renderRect.X, renderRect.Y), 1f));
             }
 
             // Render text placements
@@ -220,6 +229,38 @@ public class ExportController : ControllerBase
         });
 
         return pdf.GeneratePdf();
+    }
+
+    private static async Task<LogoRenderRect> CalculateRenderRectAsync(string logoPath, AdaptedPrintZoneDto zone, CancellationToken ct)
+    {
+        if (!string.Equals(Path.GetExtension(logoPath), ".svg", StringComparison.OrdinalIgnoreCase))
+        {
+            var info = await Image.IdentifyAsync(logoPath, ct)
+                ?? throw new InvalidOperationException("Unable to identify logo image.");
+
+            return LogoPlacementCalculator.CalculateFitToZone(
+                info.Width,
+                info.Height,
+                zone.X,
+                zone.Y,
+                zone.Width,
+                zone.Height);
+        }
+
+        using var fs = System.IO.File.OpenRead(logoPath);
+        var svg = new SKSvg();
+        var picture = svg.Load(fs) ?? throw new InvalidOperationException("Invalid SVG logo file.");
+
+        var sourceWidth = Math.Max(1, (int)Math.Ceiling(picture.CullRect.Width));
+        var sourceHeight = Math.Max(1, (int)Math.Ceiling(picture.CullRect.Height));
+
+        return LogoPlacementCalculator.CalculateFitToZone(
+            sourceWidth,
+            sourceHeight,
+            zone.X,
+            zone.Y,
+            zone.Width,
+            zone.Height);
     }
 
     private static async Task<Image> LoadLogoImageForCompositingAsync(string logoPath, int targetWidth, int targetHeight, CancellationToken ct)

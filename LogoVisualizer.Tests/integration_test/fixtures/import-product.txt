@@ -1,0 +1,1 @@
+[{"title":"Import Product for Export Test","imageUrl":"http://example.com/product.png","imageWidth":200,"imageHeight":200,"printZones":[{"name":"Export Zone","x":25,"y":25,"width":150,"height":150,"maxPhysicalWidthMm":120,"maxPhysicalHeightMm":120,"maxColors":4,"allowedTechniques":["screen_print"]}]}]

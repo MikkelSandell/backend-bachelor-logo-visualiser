@@ -16,6 +16,14 @@ This is a **bachelor's thesis** project. Code and docs are in English; UI string
 
 ```
 LogoVisualizer.sln
+├── docs/
+│   └── architecture.md     — component diagram, startup sequence, data flows, auth, DB schema
+├── LogoVisualizer.Tests/
+│   ├── unit_test/          — xUnit tests (validators, helpers, placement calculator)
+│   └── integration_test/   — Newman (Postman CLI) integration tests
+│       ├── package.json    — npm scripts: npm test / test:verbose / test:bail
+│       ├── setup.js        — generates image + JSON fixtures before Newman runs
+│       └── fixtures/
 ├── LogoVisualizer.Api      — Web API (controllers, DTOs, services, Program.cs)
 │   ├── Controllers/        — HTTP controllers (MidoceanProductsController is the active one)
 │   ├── Data/               — Static data files (midocean-top10.json)
@@ -25,7 +33,7 @@ LogoVisualizer.sln
 │   ├── Properties/         — launchSettings.json (forces Development environment)
 │   └── Services/           — Service interfaces + implementations
 └── LogoVisualizer.Data     — EF Core models, AppDbContext, repositories
-    └── Migrations/         — Created, not yet applied (no DB)
+    └── Migrations/         — Applied: InitialCreate, AddPrintZoneImageUrl, RemoveAuditLogAndFixDecimalPrecision, RenameToSlugTechniques
 ```
 
 ---
@@ -64,6 +72,24 @@ AdaptedProductDto (Id, Title, ImageUrl, ImageWidth, ImageHeight)
 Technique code mapping: `TR/ST1/SP` → `screen_print`, `E/EM` → `embroidery`,
 `EN/B` → `engraving`, `SL/SA` → `sublimation`, `DTG/TDT/TT` → `digital_print`,
 `TP/P` → `pad_print`. Unknown codes are silently dropped.
+
+---
+
+## Documentation maintenance rule — MANDATORY
+
+After **any** change to this project, keep the following two documents accurate and up to date:
+
+| Document | Location | What to keep current |
+|----------|----------|----------------------|
+| `architecture.md` | `docs/architecture.md` | Component diagram, startup sequence, data flows, auth description, zone display rules, DB schema / migrations table |
+| OpenAPI / Swagger | Auto-generated from controllers | Every new or changed endpoint must have a `/// <summary>` doc comment and `[ProducesResponseType]` attributes for all possible response codes |
+
+**Triggers — any of the following requires an update:**
+- A controller, action, or route is added, changed, or removed → update Swagger annotations and `architecture.md` if the component structure changes
+- A new service, repository, or helper is introduced that affects data flow → update `architecture.md`
+- A dependency (NuGet package, EF migration, Docker service) is added or removed → update `architecture.md`
+- The DB schema changes (new migration) → update the migrations table in `architecture.md`
+- Auth behaviour changes → update the auth section in `architecture.md`
 
 ---
 

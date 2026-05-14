@@ -39,6 +39,18 @@ The database is seeded on first run by a Docker `seeder` container (`SEED_AND_EX
 
 ```
 LogoVisualizer.sln
+├── docs/
+│   └── architecture.md         → component diagram + startup sequence + data flows + auth + DB schema
+├── LogoVisualizer.Tests/
+│   ├── unit_test/              → xUnit unit tests (no API or DB required)
+│   │   ├── LogoVisualizer.Tests.csproj
+│   │   └── *Tests.cs           (validators, helpers, placement calculator)
+│   └── integration_test/       → Newman (Postman CLI) integration tests
+│       ├── package.json        ← npm scripts: npm test / npm run test:verbose
+│       ├── setup.js            ← generates image + JSON fixtures before Newman runs
+│       ├── logo-visualizer.postman_collection.json
+│       ├── logo-visualizer.postman_environment.json
+│       └── fixtures/
 ├── LogoVisualizer.Api          → Web API entry point
 │   ├── Controllers/
 │   │   ├── AuthController.cs              ← POST /api/auth/dev-token (Development only)
@@ -111,6 +123,24 @@ Technique code mapping (`MapTechnique()` in `MidoceanProductService`):
 - **Development shortcut**: `POST /api/auth/dev-token` issues a 1-year JWT signed with the dev key. Only available when `ASPNETCORE_ENVIRONMENT=Development`. The admin frontend (`productApi.ts`) calls this automatically on the first write operation via `ensureToken()`.
 - **Public read and viewer endpoints** have no `[Authorize]` attribute.
 - **Upload and export endpoints** are public but rate-limited via `IpRateLimiting` config.
+
+---
+
+## Documentation maintenance rule — MANDATORY
+
+After **any** change to this project, keep the following two documents accurate and up to date. Do not leave them describing a state that no longer exists.
+
+| Document | Location | What to keep current |
+|----------|----------|----------------------|
+| `architecture.md` | `docs/architecture.md` | Component diagram, startup sequence, data flows, auth description, zone display rules, DB schema / migrations table |
+| OpenAPI / Swagger | Auto-generated from controllers | Every new or changed endpoint must have a `/// <summary>` doc comment and `[ProducesResponseType]` attributes for all possible response codes |
+
+**Triggers — any of the following requires an update:**
+- A controller, action, or route is added, changed, or removed → update Swagger annotations (`/// <summary>`, `[ProducesResponseType]`) and update `architecture.md` if the overall component structure changes
+- A new service, repository, or helper is introduced that affects data flow → update `architecture.md`
+- A dependency (NuGet package, EF migration, Docker service) is added or removed → update `architecture.md`
+- The DB schema changes (new migration) → update the migrations table in `architecture.md`
+- Auth behaviour changes → update the auth section in `architecture.md`
 
 ---
 
