@@ -70,7 +70,7 @@ LogoVisualizer.sln
 │   ├── Services/               → Service interfaces + implementations
 │   └── uploads/                → Runtime file upload storage
 └── LogoVisualizer.Data         → EF Core context, entity models, repositories
-    └── Migrations/             → Applied — InitialCreate, AddPrintZoneImageUrl, RemoveAuditLogAndFixDecimalPrecision
+    └── Migrations/             → Applied — InitialCreate, AddPrintZoneImageUrl, RemoveAuditLogAndFixDecimalPrecision, RenameToSlugTechniques, AddFixedLogoToZone, AddFixedLogoTechniqueAndColorCount
 ```
 
 `LogoVisualizer.Api` references `LogoVisualizer.Data`.
@@ -91,6 +91,11 @@ Product
         ├── MaxPhysicalWidthMm, MaxPhysicalHeightMm
         ├── MaxColors (nullable)
         ├── ImageUrl (nullable)          ← blank product photo for this print position
+        ├── FixedLogoUrl (nullable)      ← pre-set locked logo URL (admin-only)
+        ├── FixedLogoFileId (nullable)   ← file ID for export resolution
+        ├── FixedLogoX/Y/Width/Height (nullable) ← position in product-image pixels
+        ├── FixedLogoTechnique (nullable) ← print technique to simulate on fixed logo
+        ├── FixedLogoColorCount (nullable) ← colour count to simulate (0 = full colour)
         └── AllowedTechniques[]          ← many-to-many via PrintZoneTechnique
               └── PrintTechnique { Id, Name, Description }
 ```
