@@ -109,6 +109,8 @@ public class UpdatePrintZoneDetailDto
     public int? FixedLogoY { get; set; }
     public int? FixedLogoWidth { get; set; }
     public int? FixedLogoHeight { get; set; }
+    public string? FixedLogoTechnique { get; set; }
+    public int? FixedLogoColorCount { get; set; }
 }
 
 // ---------------------------------------------------------------------------

@@ -189,6 +189,8 @@ public class ProductsController : ControllerBase
                     existingZone.FixedLogoY = incomingZone.FixedLogoY;
                     existingZone.FixedLogoWidth = incomingZone.FixedLogoWidth;
                     existingZone.FixedLogoHeight = incomingZone.FixedLogoHeight;
+                    existingZone.FixedLogoTechnique = incomingZone.FixedLogoTechnique;
+                    existingZone.FixedLogoColorCount = incomingZone.FixedLogoColorCount;
 
                     existingZone.AllowedTechniques.Clear();
                     foreach (var techniqueId in techniqueIds)
@@ -220,6 +222,8 @@ public class ProductsController : ControllerBase
                     FixedLogoY = incomingZone.FixedLogoY,
                     FixedLogoWidth = incomingZone.FixedLogoWidth,
                     FixedLogoHeight = incomingZone.FixedLogoHeight,
+                    FixedLogoTechnique = incomingZone.FixedLogoTechnique,
+                    FixedLogoColorCount = incomingZone.FixedLogoColorCount,
                     AllowedTechniques = techniqueIds
                         .Select(techniqueId => new PrintZoneTechnique { PrintTechniqueId = techniqueId })
                         .ToList()

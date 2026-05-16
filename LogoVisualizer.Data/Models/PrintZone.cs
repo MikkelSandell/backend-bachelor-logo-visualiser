@@ -40,5 +40,11 @@ public class PrintZone
     public int? FixedLogoWidth { get; set; }
     public int? FixedLogoHeight { get; set; }
 
+    /// <summary>Print technique to simulate on the fixed logo (e.g. "engraving"). Null = full colour.</summary>
+    public string? FixedLogoTechnique { get; set; }
+
+    /// <summary>Colour count to simulate on the fixed logo. 0 = full colour, 1 = black, 2 = greyscale, etc.</summary>
+    public int? FixedLogoColorCount { get; set; }
+
     public ICollection<PrintZoneTechnique> AllowedTechniques { get; set; } = new List<PrintZoneTechnique>();
 }

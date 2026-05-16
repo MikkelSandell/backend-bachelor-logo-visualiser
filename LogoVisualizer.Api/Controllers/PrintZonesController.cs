@@ -79,6 +79,8 @@ public class PrintZonesController : ControllerBase
             FixedLogoY = request.FixedLogoY,
             FixedLogoWidth = request.FixedLogoWidth,
             FixedLogoHeight = request.FixedLogoHeight,
+            FixedLogoTechnique = request.FixedLogoTechnique,
+            FixedLogoColorCount = request.FixedLogoColorCount,
         };
 
         var resolution = await ResolveTechniquesAsync(request, ct);
@@ -123,6 +125,8 @@ public class PrintZonesController : ControllerBase
         zone.FixedLogoY = request.FixedLogoY;
         zone.FixedLogoWidth = request.FixedLogoWidth;
         zone.FixedLogoHeight = request.FixedLogoHeight;
+        zone.FixedLogoTechnique = request.FixedLogoTechnique;
+        zone.FixedLogoColorCount = request.FixedLogoColorCount;
 
         // Replace technique associations
         zone.AllowedTechniques.Clear();

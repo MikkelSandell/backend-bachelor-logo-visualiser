@@ -27,7 +27,9 @@ public record PrintZoneDto(
     int? FixedLogoX,
     int? FixedLogoY,
     int? FixedLogoWidth,
-    int? FixedLogoHeight)
+    int? FixedLogoHeight,
+    string? FixedLogoTechnique,
+    int? FixedLogoColorCount)
 {
     public static PrintZoneDto FromEntity(PrintZone z) =>
         new(
@@ -48,7 +50,9 @@ public record PrintZoneDto(
             z.FixedLogoX,
             z.FixedLogoY,
             z.FixedLogoWidth,
-            z.FixedLogoHeight
+            z.FixedLogoHeight,
+            z.FixedLogoTechnique,
+            z.FixedLogoColorCount
         );
 }
 
@@ -80,6 +84,8 @@ public class CreatePrintZoneRequest
     public int? FixedLogoY { get; set; }
     public int? FixedLogoWidth { get; set; }
     public int? FixedLogoHeight { get; set; }
+    public string? FixedLogoTechnique { get; set; }
+    public int? FixedLogoColorCount { get; set; }
 }
 
 public class UpdatePrintZoneRequest : CreatePrintZoneRequest { }

@@ -32,7 +32,9 @@ public record AdaptedPrintZoneDto(
     int? FixedLogoX = null,
     int? FixedLogoY = null,
     int? FixedLogoWidth = null,
-    int? FixedLogoHeight = null
+    int? FixedLogoHeight = null,
+    string? FixedLogoTechnique = null,
+    int? FixedLogoColorCount = null
 );
 
 // ---------------------------------------------------------------------------

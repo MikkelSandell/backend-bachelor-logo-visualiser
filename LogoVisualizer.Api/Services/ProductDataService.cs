@@ -93,7 +93,9 @@ public class ProductDataService : IProductDataService
             z.FixedLogoX,
             z.FixedLogoY,
             z.FixedLogoWidth,
-            z.FixedLogoHeight
+            z.FixedLogoHeight,
+            z.FixedLogoTechnique,
+            z.FixedLogoColorCount
         )).ToList()
     );
 }
