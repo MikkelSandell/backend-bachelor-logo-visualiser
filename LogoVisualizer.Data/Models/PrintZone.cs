@@ -28,5 +28,17 @@ public class PrintZone
     /// <summary>URL of the blank product image for this specific print position (e.g. FRONT vs BACK).</summary>
     public string? ImageUrl { get; set; }
 
+    /// <summary>Pre-set (locked) logo URL shown in the viewer. Null if no fixed logo.</summary>
+    public string? FixedLogoUrl { get; set; }
+
+    /// <summary>File ID of the fixed logo on disk — used by ExportController to resolve the file.</summary>
+    public string? FixedLogoFileId { get; set; }
+
+    /// <summary>Fixed logo position and size in product-image pixels.</summary>
+    public int? FixedLogoX { get; set; }
+    public int? FixedLogoY { get; set; }
+    public int? FixedLogoWidth { get; set; }
+    public int? FixedLogoHeight { get; set; }
+
     public ICollection<PrintZoneTechnique> AllowedTechniques { get; set; } = new List<PrintZoneTechnique>();
 }

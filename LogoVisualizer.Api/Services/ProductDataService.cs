@@ -87,7 +87,13 @@ public class ProductDataService : IProductDataService
             (double)z.MaxPhysicalHeightMm,
             z.AllowedTechniques.Select(t => t.PrintTechnique.Name).ToList(),
             z.MaxColors ?? 0,
-            z.ImageUrl ?? product.ImagePath
+            z.ImageUrl ?? product.ImagePath,
+            z.FixedLogoUrl,
+            z.FixedLogoFileId,
+            z.FixedLogoX,
+            z.FixedLogoY,
+            z.FixedLogoWidth,
+            z.FixedLogoHeight
         )).ToList()
     );
 }

@@ -73,6 +73,12 @@ public class PrintZonesController : ControllerBase
             MaxPhysicalHeightMm = request.MaxPhysicalHeightMm,
             MaxColors = request.MaxColors,
             ImageUrl = request.ImageUrl,
+            FixedLogoUrl = request.FixedLogoUrl,
+            FixedLogoFileId = request.FixedLogoFileId,
+            FixedLogoX = request.FixedLogoX,
+            FixedLogoY = request.FixedLogoY,
+            FixedLogoWidth = request.FixedLogoWidth,
+            FixedLogoHeight = request.FixedLogoHeight,
         };
 
         var resolution = await ResolveTechniquesAsync(request, ct);
@@ -111,6 +117,12 @@ public class PrintZonesController : ControllerBase
         zone.MaxPhysicalHeightMm = request.MaxPhysicalHeightMm;
         zone.MaxColors = request.MaxColors;
         if (request.ImageUrl is not null) zone.ImageUrl = request.ImageUrl;
+        zone.FixedLogoUrl = request.FixedLogoUrl;
+        zone.FixedLogoFileId = request.FixedLogoFileId;
+        zone.FixedLogoX = request.FixedLogoX;
+        zone.FixedLogoY = request.FixedLogoY;
+        zone.FixedLogoWidth = request.FixedLogoWidth;
+        zone.FixedLogoHeight = request.FixedLogoHeight;
 
         // Replace technique associations
         zone.AllowedTechniques.Clear();

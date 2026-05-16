@@ -26,7 +26,13 @@ public record AdaptedPrintZoneDto(
     double MaxPhysicalHeightMm,
     List<string> AllowedTechniques,
     int MaxColors,
-    string ImageUrl
+    string ImageUrl,
+    string? FixedLogoUrl = null,
+    string? FixedLogoFileId = null,
+    int? FixedLogoX = null,
+    int? FixedLogoY = null,
+    int? FixedLogoWidth = null,
+    int? FixedLogoHeight = null
 );
 
 // ---------------------------------------------------------------------------

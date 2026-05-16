@@ -21,7 +21,13 @@ public record PrintZoneDto(
     decimal MaxPhysicalWidthMm,
     decimal MaxPhysicalHeightMm,
     int? MaxColors,
-    List<string> AllowedTechniques)
+    List<string> AllowedTechniques,
+    string? FixedLogoUrl,
+    string? FixedLogoFileId,
+    int? FixedLogoX,
+    int? FixedLogoY,
+    int? FixedLogoWidth,
+    int? FixedLogoHeight)
 {
     public static PrintZoneDto FromEntity(PrintZone z) =>
         new(
@@ -36,7 +42,13 @@ public record PrintZoneDto(
             z.MaxColors,
             z.AllowedTechniques?
                 .Select(pzt => pzt.PrintTechnique.Name)
-                .ToList() ?? []
+                .ToList() ?? [],
+            z.FixedLogoUrl,
+            z.FixedLogoFileId,
+            z.FixedLogoX,
+            z.FixedLogoY,
+            z.FixedLogoWidth,
+            z.FixedLogoHeight
         );
 }
 
@@ -61,6 +73,13 @@ public class CreatePrintZoneRequest
 
     /// <summary>Technique names (e.g. "screen_print", "Screen Print"). Looked up case-insensitively; takes priority over AllowedTechniqueIds.</summary>
     public List<string> AllowedTechniqueNames { get; set; } = [];
+
+    public string? FixedLogoUrl { get; set; }
+    public string? FixedLogoFileId { get; set; }
+    public int? FixedLogoX { get; set; }
+    public int? FixedLogoY { get; set; }
+    public int? FixedLogoWidth { get; set; }
+    public int? FixedLogoHeight { get; set; }
 }
 
 public class UpdatePrintZoneRequest : CreatePrintZoneRequest { }
