@@ -23,10 +23,13 @@ sequenceDiagram
     Note over Viewer: Drag + resize via Konva canvas
 
     Bruger->>Viewer: Klikker Download PNG
-    Viewer->>API: POST /api/export/png with backgroundImageUrl and placements
+    Viewer->>API: POST /api/export/png with backgroundImageUrl, placements, colorCount and maxColors
     API->>CDN: GET backgroundImageUrl
     CDN-->>API: Produktbillede (bytes)
     API->>FS: Laaser logo fra uploads/logos/guid.png
+    API->>API: Resize logo to placement position and size from request
+    API->>API: Apply print technique filter via PrintTechniqueColorModeHelper
+    API->>API: Apply colour-count quantisation if colorCount is set
     API->>API: ImageSharp composite logo paa produktbillede
     API-->>Viewer: PNG blob
     Viewer-->>Bruger: Fil downloades

@@ -27,6 +27,15 @@ public class ZonePlacement
     /// If omitted, export keeps existing color behavior for backward compatibility.
     /// </summary>
     public string? SelectedTechniqueName { get; set; }
+
+    /// <summary>
+    /// Number of colours the user selected (1 = black silhouette, 2 = greyscale, &gt;2 = posterise).
+    /// 0 means no colour-count simulation is applied.
+    /// </summary>
+    public int ColorCount { get; set; }
+
+    /// <summary>Maximum allowed colours for this zone (from zone.maxColors).</summary>
+    public int MaxColors { get; set; }
 }
 
 /// <summary>

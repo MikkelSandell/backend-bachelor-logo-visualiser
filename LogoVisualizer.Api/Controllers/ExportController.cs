@@ -144,7 +144,13 @@ public class ExportController : ControllerBase
             foreach (var (logoPath, placement) in resolved)
             {
                 var zone = product.PrintZones.First(z => z.Id == placement.ZoneId);
-                var renderRect = await CalculateRenderRectAsync(logoPath, zone, ct);
+
+                // Use the position and size the user set in the viewer.
+                // Fall back to auto-fit only when the frontend sends no explicit size
+                // (e.g. an export triggered before any interaction).
+                var renderRect = (placement.LogoWidth > 0 && placement.LogoHeight > 0)
+                    ? new LogoRenderRect(placement.LogoX, placement.LogoY, placement.LogoWidth, placement.LogoHeight)
+                    : await CalculateRenderRectAsync(logoPath, zone, ct);
 
                 using var logoImage = await LoadLogoImageForCompositingAsync(
                     logoPath,
@@ -155,6 +161,9 @@ public class ExportController : ControllerBase
                 PrintTechniqueColorModeHelper.ApplyColorModeForTechnique(
                     logoImage,
                     placement.SelectedTechniqueName);
+
+                if (placement.ColorCount > 0 && placement.MaxColors > 0 && placement.ColorCount < placement.MaxColors)
+                    ApplyColorCount(logoImage, placement.ColorCount, placement.MaxColors);
 
                 productImage.Mutate(ctx =>
                     ctx.DrawImage(logoImage, new Point(renderRect.X, renderRect.Y), 1f));
@@ -229,6 +238,43 @@ public class ExportController : ControllerBase
         });
 
         return pdf.GeneratePdf();
+    }
+
+    /// <summary>
+    /// Applies colour-count quantisation to match the viewer's canvas preview.
+    /// ColorCount=1 → black silhouette, =2 → greyscale, &gt;2 → posterise.
+    /// </summary>
+    private static void ApplyColorCount(Image image, int colorCount, int maxColors)
+    {
+        if (colorCount == 1)
+        {
+            // Black silhouette: greyscale first, then zero out R/G/B while keeping alpha.
+            image.Mutate(ctx => ctx.Grayscale());
+            if (image is Image<SixLabors.ImageSharp.PixelFormats.Rgba32> rgba)
+            {
+                rgba.ProcessPixelRows(accessor =>
+                {
+                    for (var y = 0; y < accessor.Height; y++)
+                    {
+                        var row = accessor.GetRowSpan(y);
+                        for (var x = 0; x < row.Length; x++)
+                        {
+                            row[x].R = 0; row[x].G = 0; row[x].B = 0;
+                        }
+                    }
+                });
+            }
+        }
+        else if (colorCount == 2)
+        {
+            image.Mutate(ctx => ctx.Grayscale());
+        }
+        else
+        {
+            // Mirror frontend: levels = round((colorCount / maxColors) * 8), min 2.
+            var levels = Math.Max(2, (int)Math.Round(colorCount / (double)maxColors * 8));
+            PrintTechniqueColorModeHelper.PosterizeManual(image, levels);
+        }
     }
 
     private static async Task<LogoRenderRect> CalculateRenderRectAsync(string logoPath, AdaptedPrintZoneDto zone, CancellationToken ct)
