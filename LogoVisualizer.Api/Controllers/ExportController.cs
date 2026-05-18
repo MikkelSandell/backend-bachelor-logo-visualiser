@@ -140,6 +140,19 @@ public class ExportController : ControllerBase
             using var bgStream = await bgResponse.Content.ReadAsStreamAsync(ct);
             using var productImage = await Image.LoadAsync(bgStream, ct);
 
+            // The frontend calculates positions in the coordinate space of
+            // product.ImageWidth × product.ImageHeight (stored in the DB, typically 1000×1000).
+            // If the actual downloaded image has different dimensions, scale every placement
+            // coordinate proportionally so logos land in the right spot.
+            var coordScaleX = product.ImageWidth  > 0 ? (double)productImage.Width  / product.ImageWidth  : 1.0;
+            var coordScaleY = product.ImageHeight > 0 ? (double)productImage.Height / product.ImageHeight : 1.0;
+
+            LogoRenderRect ScalePlacement(LogoRenderRect r) => new(
+                (int)Math.Round(r.X * coordScaleX),
+                (int)Math.Round(r.Y * coordScaleY),
+                Math.Max(1, (int)Math.Round(r.Width  * coordScaleX)),
+                Math.Max(1, (int)Math.Round(r.Height * coordScaleY)));
+
             // Composite each logo in order
             foreach (var (logoPath, placement) in resolved)
             {
@@ -148,9 +161,11 @@ public class ExportController : ControllerBase
                 // Use the position and size the user set in the viewer.
                 // Fall back to auto-fit only when the frontend sends no explicit size
                 // (e.g. an export triggered before any interaction).
-                var renderRect = (placement.LogoWidth > 0 && placement.LogoHeight > 0)
+                var rawRect = (placement.LogoWidth > 0 && placement.LogoHeight > 0)
                     ? new LogoRenderRect(placement.LogoX, placement.LogoY, placement.LogoWidth, placement.LogoHeight)
                     : await CalculateRenderRectAsync(logoPath, zone, ct);
+
+                var renderRect = ScalePlacement(rawRect);
 
                 using var logoImage = await LoadLogoImageForCompositingAsync(
                     logoPath,
@@ -189,14 +204,14 @@ public class ExportController : ControllerBase
                     foreach (var tp in request.TextPlacements)
                     {
                         if (string.IsNullOrWhiteSpace(tp.Text)) continue;
-                        var fontSize = Math.Max(8f, tp.FontSize);
+                        var fontSize = Math.Max(8f, tp.FontSize * (float)coordScaleX);
                         var font = fontFamily.Value.CreateFont(fontSize, FontStyle.Regular);
                         if (!Color.TryParse(tp.Color, out var textColor))
                             textColor = Color.Black;
 
                         var textOptions = new RichTextOptions(font)
                         {
-                            Origin = new PointF(tp.X, tp.Y),
+                            Origin = new PointF((float)(tp.X * coordScaleX), (float)(tp.Y * coordScaleY)),
                         };
                         productImage.Mutate(ctx => ctx.DrawText(textOptions, tp.Text, textColor));
                     }
