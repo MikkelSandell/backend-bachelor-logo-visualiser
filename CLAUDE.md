@@ -23,8 +23,10 @@ The project is a **bachelor's thesis** deliverable. Code and documentation are i
 | Database           | SQL Server 2022 — running in Docker (`logo-db` container) |
 | Authentication     | JWT Bearer — dev token via `POST /api/auth/dev-token`; production tokens from *Master* app |
 | Rate limiting      | `AspNetCoreRateLimit`                             |
-| Image compositing  | `SixLabors.ImageSharp` 3.1.11 — logo overlay      |
+| Image compositing  | `SixLabors.ImageSharp` 3.1.11 — logo overlay and colour-count quantisation |
 | Text rendering     | `SixLabors.ImageSharp.Drawing` 2.1.7 — text-on-image via system fonts |
+| SVG rasterisation  | `Svg.Skia` 3.0.4 + `SkiaSharp` — SVG logos converted to PNG before compositing |
+| PDF export         | `QuestPDF` 2024.7.1 — multi-page PDF wrapping composited PNGs |
 | API docs           | Swashbuckle / OpenAPI 3                           |
 
 ### Active data source
@@ -184,8 +186,9 @@ After **any** change to this project, keep the following two documents accurate 
 | `LogoVisualizer.Api/Controllers/AuthController.cs` | `POST /api/auth/dev-token` — issues dev JWT (Development only) |
 | `LogoVisualizer.Api/Controllers/MidoceanProductsController.cs` | Raw JSON endpoints; adapted endpoints delegate to `ProductDataService` (DB-first) |
 | `LogoVisualizer.Api/Controllers/PrintZonesController.cs` | Zone CRUD — accepts `AllowedTechniqueNames` (string names) resolved via `ResolveTechniquesAsync` |
-| `LogoVisualizer.Api/Controllers/ExportController.cs` | PNG composite — accepts `ExportPngRequest` with a `placements[]` (logo) list and a `textPlacements[]` list; composites all onto the caller-supplied `backgroundImageUrl`; uses `IProductDataService` (supports DB IDs and Midocean master codes) |
-| `LogoVisualizer.Api/DTOs/UploadExportDtos.cs` | `ZonePlacement`, `TextPlacement`, `ExportPngRequest` (replaces old single-zone `ExportPngRequestMidocean`) |
+| `LogoVisualizer.Api/Controllers/ExportController.cs` | PNG and PDF export — uses frontend-supplied `LogoX/Y/Width/Height` directly (falls back to auto-fit only when size is 0); scales all coordinates from stored product dimensions to actual downloaded image dimensions; applies technique colour effects via `PrintTechniqueColorModeHelper` and colour-count quantisation via `ApplyColorCount`; PDF wraps per-page PNGs via QuestPDF |
+| `LogoVisualizer.Api/Helpers/PrintTechniqueColorModeHelper.cs` | Applies visual effects per technique slug: engraving→greyscale+contrast, screen_print→posterise+blur, pad_print→posterise+blur, embroidery→posterise+contrast, sublimation→contrast, digital_print→no effect. `PosterizeManual` mirrors the frontend's canvas quantisation formula |
+| `LogoVisualizer.Api/DTOs/UploadExportDtos.cs` | `ZonePlacement` (logoX/Y/Width/Height + `SelectedTechniqueName` + `ColorCount` + `MaxColors`), `TextPlacement`, `ExportPngRequest`, `MultiPagePdfExportRequest` |
 | `LogoVisualizer.Api/Controllers/LogoUploadController.cs` | Logo file upload; SVG sanitisation is a TODO |
 | `LogoVisualizer.Api/Services/ProductDataService.cs` | `IProductDataService` — queries DB, falls back to JSON on error/empty |
 | `LogoVisualizer.Api/Services/MidoceanProductService.cs` | Singleton — loads `Midocean-print-data.json`, adapts to frontend shape (JSON fallback) |
@@ -239,7 +242,7 @@ dotnet user-secrets set "Jwt:Key" "<value>"
 - **Image dimensions assumed**: Midocean CDN images are assumed to be 1000×1000 px. Actual dimensions should be detected or fetched if they differ.
 - **SVG sanitisation**: `LogoUploadController` logs a warning but does not yet strip `<script>` tags from SVG uploads. Add an SVG sanitiser before production.
 - **Auth integration with Master**: Replace the dev JWT config with the actual Master application issuer/audience/key. The `dev-token` endpoint must not be exposed in production.
-- **PDF export** (nice-to-have): A multi-page PDF with front/back side is not yet implemented.
+- **Auth integration with Master** (only item remaining): replace the dev JWT config with the actual Master application issuer/audience/key before production.
 
 ---
 
