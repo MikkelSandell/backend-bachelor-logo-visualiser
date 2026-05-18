@@ -228,49 +228,62 @@ The external **Master application** issues JWT tokens. The backend validates the
 
 ## Komponentdiagram
 
-> Paste the code block below into **[mermaid.live](https://mermaid.live)** to view or export the diagram.
+> Paste the code block below into **[plantuml.com/plantuml](https://plantuml.com/plantuml)** to view or export the diagram.
 
-```mermaid
-graph TB
-    subgraph docker["🐳 Docker"]
-        db[("SQL Server 2022\nlogo-db · port 1433")]
-        seeder(["Seeder\none-shot container"])
-    end
+```plantuml
+@startuml
 
-    subgraph backend["Backend — localhost:5000  ·  ASP.NET Core 10"]
-        subgraph apimod["LogoVisualizer.Api"]
-            ctrl["&lt;&lt;controllers&gt;&gt;\nProducts · PrintZones · Techniques\nLogoUpload · Files · Export\nMidoceanProducts · Auth"]
-            svc["&lt;&lt;services / helpers&gt;&gt;\nProductValidator · FileValidator\nExportValidator · PrintZoneValidator\nLogoPlacementCalculator\nPrintTechniqueColorModeHelper"]
-        end
-        subgraph datamod["LogoVisualizer.Data"]
-            ctx["AppDbContext\nEF Core 10"]
-            repos["IProductRepository\nIPrintZoneRepository"]
-        end
-        json[("Midocean-print-data.json\nJSON fallback")]
-    end
+skinparam componentStyle rectangle
+skinparam backgroundColor white
+skinparam node {
+    BackgroundColor LightYellow
+    BorderColor DarkGoldenRod
+}
 
-    subgraph frontend["Frontend — React 18 + TypeScript + Vite"]
-        shared["&lt;&lt;package&gt;&gt;\n@logo-visualizer/shared\nDomain types · UI components"]
-        subgraph admin["Admin App — localhost:5173"]
-            apages["ProductsPage\nProductEditorPage\nKonva canvas editor"]
-        end
-        subgraph viewer["Viewer App — localhost:5174"]
-            vpages["ProductCanvas · ZoneSelector\nLogoUploader · TechniqueSelector\nTextLibrary"]
-            wc["Web Component\nShadow DOM embed"]
-        end
-    end
+node "Docker" {
+    database "SQL Server 2022\nlogo-db port 1433" as DB
+    component "Seeder\n(one-shot: migrate + seed)" as Seeder
+}
 
-    seeder       -->|"EF Core\nmigrate + seed"| db
-    apimod       -->|"DI"| datamod
-    datamod      <-->|"EF Core queries"| db
-    apimod       -. "fallback\nif DB empty" .->   json
+node "Backend - ASP.NET Core 10 - localhost:5000" {
+    node "LogoVisualizer.Api" {
+        component "Controllers\nProducts, PrintZones, Techniques\nLogoUpload, Files, Export, Auth" as Ctrl
+        component "Services and Helpers\nProductValidator, FileValidator\nExportValidator, LogoPlacementCalculator\nPrintTechniqueColorModeHelper" as Svc
+    }
+    node "LogoVisualizer.Data" {
+        component "AppDbContext (EF Core 10)" as Ctx
+        component "IProductRepository\nIPrintZoneRepository" as Repos
+    }
+    database "Midocean JSON fallback" as JSON
+}
 
-    admin        -->|"REST /api/products\n/api/zones · /api/techniques\nBearer JWT"| apimod
-    viewer       -->|"REST /api/midocean-products\n/api/logos · /api/export"| apimod
-    viewer       -. "compiled as" .-> wc
+node "Frontend - React 18 + TypeScript + Vite" {
+    component "shared package\n@logo-visualizer/shared\nDomain types, UI components" as Shared
 
-    admin        -->|"npm workspace"| shared
-    viewer       -->|"npm workspace"| shared
+    node "Admin App - localhost:5173" {
+        component "ProductsPage\nProductEditorPage\nKonva canvas editor" as AdminPages
+    }
+
+    node "Viewer App - localhost:5174" {
+        component "ProductCanvas, ZoneSelector\nLogoUploader, TechniqueSelector" as ViewerPages
+        component "Web Component\n(Shadow DOM embed)" as WC
+    }
+}
+
+Seeder --> DB : EF Core migrate + seed
+Ctx <--> DB : EF Core queries
+Ctrl --> Ctx
+Ctrl --> Svc
+Ctrl ..> JSON : fallback if DB empty
+
+AdminPages --> Ctrl : REST API with Bearer JWT
+ViewerPages --> Ctrl : REST API
+
+AdminPages --> Shared : npm workspace
+ViewerPages --> Shared : npm workspace
+ViewerPages ..> WC : compiled as
+
+@enduml
 ```
 
 ---
