@@ -40,7 +40,17 @@ The database is seeded on first run by a Docker `seeder` container (`SEED_AND_EX
 ```
 LogoVisualizer.sln
 ├── docs/
-│   └── architecture.md         → component diagram + startup sequence + data flows + auth + DB schema
+│   ├── architecture.md         → startup sequence, data flows, auth, DB schema, component diagram (PlantUML)
+│   ├── archit/                 → component diagram source + exported PNG
+│   ├── er/                     → ER diagram (mermaid.live)
+│   ├── usecase/                → use case diagram (PlantUML)
+│   ├── seq-export/             → sequence diagram: logo upload and export flow (mermaid.live)
+│   ├── seq-admin/              → sequence diagram: admin zone setup flow (mermaid.live)
+│   ├── deployment/             → deployment diagram (PlantUML)
+│   ├── class/                  → class diagram: domain model (mermaid.live)
+│   ├── activity/               → activity diagram: admin and viewer user flows (PlantUML)
+│   ├── state/                  → state diagram: product configuration lifecycle (mermaid.live)
+│   └── c4/                     → C4 context diagram (PlantUML)
 ├── LogoVisualizer.Tests/
 │   ├── unit_test/              → xUnit unit tests (no API or DB required)
 │   │   ├── LogoVisualizer.Tests.csproj
