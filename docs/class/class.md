@@ -25,6 +25,14 @@ classDiagram
         +decimal MaxPhysicalHeightMm
         +int? MaxColors
         +string? ImageUrl
+        +string? FixedLogoUrl
+        +string? FixedLogoFileId
+        +int? FixedLogoX
+        +int? FixedLogoY
+        +int? FixedLogoWidth
+        +int? FixedLogoHeight
+        +string? FixedLogoTechnique
+        +int? FixedLogoColorCount
         +List~PrintZoneTechnique~ PrintZoneTechniques
     }
 
