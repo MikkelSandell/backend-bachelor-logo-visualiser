@@ -47,7 +47,7 @@ public static class PrintTechniqueColorModeHelper
     /// Mirrors the frontend's canvas posterisation: step = 255 / (levels - 1),
     /// new = round(round(value / step) * step).
     /// </summary>
-    internal static void PosterizeManual(Image image, int levels)
+    public static void PosterizeManual(Image image, int levels)
     {
         if (image is not Image<Rgba32> rgba) return;
         var safeLevel = Math.Max(2, levels);
