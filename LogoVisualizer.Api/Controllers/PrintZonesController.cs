@@ -73,14 +73,14 @@ public class PrintZonesController : ControllerBase
             MaxPhysicalHeightMm = request.MaxPhysicalHeightMm,
             MaxColors = request.MaxColors,
             ImageUrl = request.ImageUrl,
-            FixedLogoUrl = request.FixedLogoUrl,
-            FixedLogoFileId = request.FixedLogoFileId,
-            FixedLogoX = request.FixedLogoX,
-            FixedLogoY = request.FixedLogoY,
-            FixedLogoWidth = request.FixedLogoWidth,
-            FixedLogoHeight = request.FixedLogoHeight,
-            FixedLogoTechnique = request.FixedLogoTechnique,
-            FixedLogoColorCount = request.FixedLogoColorCount,
+            BumArtikelUrl = request.BumArtikelUrl,
+            BumArtikelFileId = request.BumArtikelFileId,
+            BumArtikelX = request.BumArtikelX,
+            BumArtikelY = request.BumArtikelY,
+            BumArtikelWidth = request.BumArtikelWidth,
+            BumArtikelHeight = request.BumArtikelHeight,
+            BumArtikelTechnique = request.BumArtikelTechnique,
+            BumArtikelColorCount = request.BumArtikelColorCount,
         };
 
         var resolution = await ResolveTechniquesAsync(request, ct);
@@ -119,14 +119,14 @@ public class PrintZonesController : ControllerBase
         zone.MaxPhysicalHeightMm = request.MaxPhysicalHeightMm;
         zone.MaxColors = request.MaxColors;
         if (request.ImageUrl is not null) zone.ImageUrl = request.ImageUrl;
-        zone.FixedLogoUrl = request.FixedLogoUrl;
-        zone.FixedLogoFileId = request.FixedLogoFileId;
-        zone.FixedLogoX = request.FixedLogoX;
-        zone.FixedLogoY = request.FixedLogoY;
-        zone.FixedLogoWidth = request.FixedLogoWidth;
-        zone.FixedLogoHeight = request.FixedLogoHeight;
-        zone.FixedLogoTechnique = request.FixedLogoTechnique;
-        zone.FixedLogoColorCount = request.FixedLogoColorCount;
+        zone.BumArtikelUrl = request.BumArtikelUrl;
+        zone.BumArtikelFileId = request.BumArtikelFileId;
+        zone.BumArtikelX = request.BumArtikelX;
+        zone.BumArtikelY = request.BumArtikelY;
+        zone.BumArtikelWidth = request.BumArtikelWidth;
+        zone.BumArtikelHeight = request.BumArtikelHeight;
+        zone.BumArtikelTechnique = request.BumArtikelTechnique;
+        zone.BumArtikelColorCount = request.BumArtikelColorCount;
 
         // Replace technique associations
         zone.AllowedTechniques.Clear();

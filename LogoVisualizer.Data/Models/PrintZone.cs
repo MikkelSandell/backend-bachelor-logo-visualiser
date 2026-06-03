@@ -28,23 +28,23 @@ public class PrintZone
     /// <summary>URL of the blank product image for this specific print position (e.g. FRONT vs BACK).</summary>
     public string? ImageUrl { get; set; }
 
-    /// <summary>Pre-set (locked) logo URL shown in the viewer. Null if no fixed logo.</summary>
-    public string? FixedLogoUrl { get; set; }
+    /// <summary>Pre-set bum-artikel URL shown in the viewer. Null if no bum-artikel.</summary>
+    public string? BumArtikelUrl { get; set; }
 
-    /// <summary>File ID of the fixed logo on disk — used by ExportController to resolve the file.</summary>
-    public string? FixedLogoFileId { get; set; }
+    /// <summary>File ID of the bum-artikel on disk — used by ExportController to resolve the file.</summary>
+    public string? BumArtikelFileId { get; set; }
 
-    /// <summary>Fixed logo position and size in product-image pixels.</summary>
-    public int? FixedLogoX { get; set; }
-    public int? FixedLogoY { get; set; }
-    public int? FixedLogoWidth { get; set; }
-    public int? FixedLogoHeight { get; set; }
+    /// <summary>Bum-artikel position and size in product-image pixels.</summary>
+    public int? BumArtikelX { get; set; }
+    public int? BumArtikelY { get; set; }
+    public int? BumArtikelWidth { get; set; }
+    public int? BumArtikelHeight { get; set; }
 
-    /// <summary>Print technique to simulate on the fixed logo (e.g. "engraving"). Null = full colour.</summary>
-    public string? FixedLogoTechnique { get; set; }
+    /// <summary>Print technique to simulate on the bum-artikel (e.g. "engraving"). Null = full colour.</summary>
+    public string? BumArtikelTechnique { get; set; }
 
-    /// <summary>Colour count to simulate on the fixed logo. 0 = full colour, 1 = black, 2 = greyscale, etc.</summary>
-    public int? FixedLogoColorCount { get; set; }
+    /// <summary>Colour count to simulate on the bum-artikel. 0 = full colour, 1 = black, 2 = greyscale, etc.</summary>
+    public int? BumArtikelColorCount { get; set; }
 
     public ICollection<PrintZoneTechnique> AllowedTechniques { get; set; } = new List<PrintZoneTechnique>();
 }

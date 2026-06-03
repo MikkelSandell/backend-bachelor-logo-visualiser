@@ -209,8 +209,9 @@ The external **Master application** issues JWT tokens. The backend validates the
 | `AddPrintZoneImageUrl` | `ImageUrl` nullable column on `PrintZones` |
 | `RemoveAuditLogAndFixDecimalPrecision` | Drops unused `AuditLogs` table; adds explicit precision (10, 2) to `MaxPhysicalWidthMm` and `MaxPhysicalHeightMm` |
 | `RenameToSlugTechniques` | Renames technique `Name` values to slug format (e.g. `screen_print`) |
-| `AddFixedLogoToZone` | Adds `FixedLogoUrl`, `FixedLogoFileId`, `FixedLogoX/Y/Width/Height` nullable columns to `PrintZones` |
-| `AddFixedLogoTechniqueAndColorCount` | Adds `FixedLogoTechnique` and `FixedLogoColorCount` nullable columns to `PrintZones` |
+| `AddFixedLogoToZone` | Adds bum-artikel URL, file ID, and position columns to `PrintZones` (originally named `FixedLogo*`) |
+| `AddFixedLogoTechniqueAndColorCount` | Adds bum-artikel technique and colour count columns to `PrintZones` (originally named `FixedLogo*`) |
+| `RenameBumArtikelColumns` | Renames all 8 bum-artikel columns to `BumArtikel*` (was `FixedLogo*`) |
 
 **Technique seed data** (from `AppDbContext.OnModelCreating`):
 

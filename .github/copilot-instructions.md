@@ -33,7 +33,7 @@ LogoVisualizer.sln
 │   ├── Properties/         — launchSettings.json (forces Development environment)
 │   └── Services/           — Service interfaces + implementations
 └── LogoVisualizer.Data     — EF Core models, AppDbContext, repositories
-    └── Migrations/         — Applied: InitialCreate, AddPrintZoneImageUrl, RemoveAuditLogAndFixDecimalPrecision, RenameToSlugTechniques, AddFixedLogoToZone, AddFixedLogoTechniqueAndColorCount
+    └── Migrations/         — Applied: InitialCreate, AddPrintZoneImageUrl, RemoveAuditLogAndFixDecimalPrecision, RenameToSlugTechniques, AddFixedLogoToZone, AddFixedLogoTechniqueAndColorCount, RenameBumArtikelColumns
 ```
 
 ---
@@ -56,8 +56,8 @@ LogoVisualizer.sln
 Product (Id, Title, ImagePath, ImageWidth, ImageHeight)
   └── PrintZone[] (Id, ProductId, Name, X, Y, Width, Height,
                    MaxPhysicalWidthMm, MaxPhysicalHeightMm, MaxColors, ImageUrl,
-                   FixedLogoUrl, FixedLogoFileId, FixedLogoX, FixedLogoY,
-                   FixedLogoWidth, FixedLogoHeight, FixedLogoTechnique, FixedLogoColorCount)
+                   BumArtikelUrl, BumArtikelFileId, BumArtikelX, BumArtikelY,
+                   BumArtikelWidth, BumArtikelHeight, BumArtikelTechnique, BumArtikelColorCount)
         └── PrintZoneTechnique[] → PrintTechnique (Id, Name)
 ```
 

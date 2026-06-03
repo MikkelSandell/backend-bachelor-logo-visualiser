@@ -88,14 +88,14 @@ public class ProductDataService : IProductDataService
             z.AllowedTechniques.Select(t => t.PrintTechnique.Name).ToList(),
             z.MaxColors ?? 0,
             z.ImageUrl ?? product.ImagePath,
-            z.FixedLogoUrl,
-            z.FixedLogoFileId,
-            z.FixedLogoX,
-            z.FixedLogoY,
-            z.FixedLogoWidth,
-            z.FixedLogoHeight,
-            z.FixedLogoTechnique,
-            z.FixedLogoColorCount
+            z.BumArtikelUrl,
+            z.BumArtikelFileId,
+            z.BumArtikelX,
+            z.BumArtikelY,
+            z.BumArtikelWidth,
+            z.BumArtikelHeight,
+            z.BumArtikelTechnique,
+            z.BumArtikelColorCount
         )).ToList()
     );
 }

@@ -184,14 +184,14 @@ public class ProductsController : ControllerBase
                     existingZone.MaxPhysicalHeightMm = incomingZone.MaxPhysicalHeightMm;
                     existingZone.MaxColors = incomingZone.MaxColors;
                     if (incomingZone.ImageUrl is not null) existingZone.ImageUrl = incomingZone.ImageUrl;
-                    existingZone.FixedLogoUrl = incomingZone.FixedLogoUrl;
-                    existingZone.FixedLogoFileId = incomingZone.FixedLogoFileId;
-                    existingZone.FixedLogoX = incomingZone.FixedLogoX;
-                    existingZone.FixedLogoY = incomingZone.FixedLogoY;
-                    existingZone.FixedLogoWidth = incomingZone.FixedLogoWidth;
-                    existingZone.FixedLogoHeight = incomingZone.FixedLogoHeight;
-                    existingZone.FixedLogoTechnique = incomingZone.FixedLogoTechnique;
-                    existingZone.FixedLogoColorCount = incomingZone.FixedLogoColorCount;
+                    existingZone.BumArtikelUrl = incomingZone.BumArtikelUrl;
+                    existingZone.BumArtikelFileId = incomingZone.BumArtikelFileId;
+                    existingZone.BumArtikelX = incomingZone.BumArtikelX;
+                    existingZone.BumArtikelY = incomingZone.BumArtikelY;
+                    existingZone.BumArtikelWidth = incomingZone.BumArtikelWidth;
+                    existingZone.BumArtikelHeight = incomingZone.BumArtikelHeight;
+                    existingZone.BumArtikelTechnique = incomingZone.BumArtikelTechnique;
+                    existingZone.BumArtikelColorCount = incomingZone.BumArtikelColorCount;
 
                     existingZone.AllowedTechniques.Clear();
                     foreach (var techniqueId in techniqueIds)
@@ -218,14 +218,14 @@ public class ProductsController : ControllerBase
                     MaxPhysicalHeightMm = incomingZone.MaxPhysicalHeightMm,
                     MaxColors = incomingZone.MaxColors,
                     ImageUrl = incomingZone.ImageUrl,
-                    FixedLogoUrl = incomingZone.FixedLogoUrl,
-                    FixedLogoFileId = incomingZone.FixedLogoFileId,
-                    FixedLogoX = incomingZone.FixedLogoX,
-                    FixedLogoY = incomingZone.FixedLogoY,
-                    FixedLogoWidth = incomingZone.FixedLogoWidth,
-                    FixedLogoHeight = incomingZone.FixedLogoHeight,
-                    FixedLogoTechnique = incomingZone.FixedLogoTechnique,
-                    FixedLogoColorCount = incomingZone.FixedLogoColorCount,
+                    BumArtikelUrl = incomingZone.BumArtikelUrl,
+                    BumArtikelFileId = incomingZone.BumArtikelFileId,
+                    BumArtikelX = incomingZone.BumArtikelX,
+                    BumArtikelY = incomingZone.BumArtikelY,
+                    BumArtikelWidth = incomingZone.BumArtikelWidth,
+                    BumArtikelHeight = incomingZone.BumArtikelHeight,
+                    BumArtikelTechnique = incomingZone.BumArtikelTechnique,
+                    BumArtikelColorCount = incomingZone.BumArtikelColorCount,
                     AllowedTechniques = techniqueIds
                         .Select(techniqueId => new PrintZoneTechnique { PrintTechniqueId = techniqueId })
                         .ToList()

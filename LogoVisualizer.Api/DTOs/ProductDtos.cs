@@ -104,14 +104,14 @@ public class UpdatePrintZoneDetailDto
     public int? MaxColors { get; set; }
     public string? ImageUrl { get; set; }
     public List<string> AllowedTechniques { get; set; } = [];  // Never null
-    public string? FixedLogoUrl { get; set; }
-    public string? FixedLogoFileId { get; set; }
-    public int? FixedLogoX { get; set; }
-    public int? FixedLogoY { get; set; }
-    public int? FixedLogoWidth { get; set; }
-    public int? FixedLogoHeight { get; set; }
-    public string? FixedLogoTechnique { get; set; }
-    public int? FixedLogoColorCount { get; set; }
+    public string? BumArtikelUrl { get; set; }
+    public string? BumArtikelFileId { get; set; }
+    public int? BumArtikelX { get; set; }
+    public int? BumArtikelY { get; set; }
+    public int? BumArtikelWidth { get; set; }
+    public int? BumArtikelHeight { get; set; }
+    public string? BumArtikelTechnique { get; set; }
+    public int? BumArtikelColorCount { get; set; }
 }
 
 // ---------------------------------------------------------------------------

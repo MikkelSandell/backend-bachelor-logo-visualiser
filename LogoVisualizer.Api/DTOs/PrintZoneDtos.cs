@@ -23,14 +23,14 @@ public record PrintZoneDto(
     int? MaxColors,
     List<string> AllowedTechniques,
     string? ImageUrl,
-    string? FixedLogoUrl,
-    string? FixedLogoFileId,
-    int? FixedLogoX,
-    int? FixedLogoY,
-    int? FixedLogoWidth,
-    int? FixedLogoHeight,
-    string? FixedLogoTechnique,
-    int? FixedLogoColorCount)
+    string? BumArtikelUrl,
+    string? BumArtikelFileId,
+    int? BumArtikelX,
+    int? BumArtikelY,
+    int? BumArtikelWidth,
+    int? BumArtikelHeight,
+    string? BumArtikelTechnique,
+    int? BumArtikelColorCount)
 {
     public static PrintZoneDto FromEntity(PrintZone z) =>
         new(
@@ -47,14 +47,14 @@ public record PrintZoneDto(
                 .Select(pzt => pzt.PrintTechnique.Name)
                 .ToList() ?? [],
             z.ImageUrl,
-            z.FixedLogoUrl,
-            z.FixedLogoFileId,
-            z.FixedLogoX,
-            z.FixedLogoY,
-            z.FixedLogoWidth,
-            z.FixedLogoHeight,
-            z.FixedLogoTechnique,
-            z.FixedLogoColorCount
+            z.BumArtikelUrl,
+            z.BumArtikelFileId,
+            z.BumArtikelX,
+            z.BumArtikelY,
+            z.BumArtikelWidth,
+            z.BumArtikelHeight,
+            z.BumArtikelTechnique,
+            z.BumArtikelColorCount
         );
 }
 
@@ -80,14 +80,14 @@ public class CreatePrintZoneRequest
     /// <summary>Technique names (e.g. "screen_print", "Screen Print"). Looked up case-insensitively; takes priority over AllowedTechniqueIds.</summary>
     public List<string> AllowedTechniqueNames { get; set; } = [];
 
-    public string? FixedLogoUrl { get; set; }
-    public string? FixedLogoFileId { get; set; }
-    public int? FixedLogoX { get; set; }
-    public int? FixedLogoY { get; set; }
-    public int? FixedLogoWidth { get; set; }
-    public int? FixedLogoHeight { get; set; }
-    public string? FixedLogoTechnique { get; set; }
-    public int? FixedLogoColorCount { get; set; }
+    public string? BumArtikelUrl { get; set; }
+    public string? BumArtikelFileId { get; set; }
+    public int? BumArtikelX { get; set; }
+    public int? BumArtikelY { get; set; }
+    public int? BumArtikelWidth { get; set; }
+    public int? BumArtikelHeight { get; set; }
+    public string? BumArtikelTechnique { get; set; }
+    public int? BumArtikelColorCount { get; set; }
 }
 
 public class UpdatePrintZoneRequest : CreatePrintZoneRequest { }

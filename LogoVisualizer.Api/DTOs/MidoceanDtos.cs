@@ -27,14 +27,14 @@ public record AdaptedPrintZoneDto(
     List<string> AllowedTechniques,
     int MaxColors,
     string ImageUrl,
-    string? FixedLogoUrl = null,
-    string? FixedLogoFileId = null,
-    int? FixedLogoX = null,
-    int? FixedLogoY = null,
-    int? FixedLogoWidth = null,
-    int? FixedLogoHeight = null,
-    string? FixedLogoTechnique = null,
-    int? FixedLogoColorCount = null
+    string? BumArtikelUrl = null,
+    string? BumArtikelFileId = null,
+    int? BumArtikelX = null,
+    int? BumArtikelY = null,
+    int? BumArtikelWidth = null,
+    int? BumArtikelHeight = null,
+    string? BumArtikelTechnique = null,
+    int? BumArtikelColorCount = null
 );
 
 // ---------------------------------------------------------------------------
