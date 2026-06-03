@@ -183,6 +183,7 @@ public class ProductsController : ControllerBase
                     existingZone.MaxPhysicalWidthMm = incomingZone.MaxPhysicalWidthMm;
                     existingZone.MaxPhysicalHeightMm = incomingZone.MaxPhysicalHeightMm;
                     existingZone.MaxColors = incomingZone.MaxColors;
+                    if (incomingZone.ImageUrl is not null) existingZone.ImageUrl = incomingZone.ImageUrl;
                     existingZone.FixedLogoUrl = incomingZone.FixedLogoUrl;
                     existingZone.FixedLogoFileId = incomingZone.FixedLogoFileId;
                     existingZone.FixedLogoX = incomingZone.FixedLogoX;
@@ -216,6 +217,7 @@ public class ProductsController : ControllerBase
                     MaxPhysicalWidthMm = incomingZone.MaxPhysicalWidthMm,
                     MaxPhysicalHeightMm = incomingZone.MaxPhysicalHeightMm,
                     MaxColors = incomingZone.MaxColors,
+                    ImageUrl = incomingZone.ImageUrl,
                     FixedLogoUrl = incomingZone.FixedLogoUrl,
                     FixedLogoFileId = incomingZone.FixedLogoFileId,
                     FixedLogoX = incomingZone.FixedLogoX,

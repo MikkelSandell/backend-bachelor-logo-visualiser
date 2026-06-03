@@ -20,6 +20,8 @@ else (nej)
 end if
 
 repeat
+    :Vaelg side (Forside / Bagside) i canvas-toggle;
+    note right: Canvas skifter baggrundsbillede\nog viser kun zoner for den valgte side
     :Tegn printzone paa canvas (drag);
     :Udfyld zone-metadata\n(navn, mm-maal, max farver, teknikker);
 repeat while (Flere zoner?) is (ja)

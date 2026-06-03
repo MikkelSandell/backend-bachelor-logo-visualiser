@@ -102,6 +102,7 @@ public class UpdatePrintZoneDetailDto
     public decimal MaxPhysicalWidthMm { get; set; }
     public decimal MaxPhysicalHeightMm { get; set; }
     public int? MaxColors { get; set; }
+    public string? ImageUrl { get; set; }
     public List<string> AllowedTechniques { get; set; } = [];  // Never null
     public string? FixedLogoUrl { get; set; }
     public string? FixedLogoFileId { get; set; }

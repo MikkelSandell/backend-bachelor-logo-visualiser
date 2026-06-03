@@ -22,6 +22,7 @@ public record PrintZoneDto(
     decimal MaxPhysicalHeightMm,
     int? MaxColors,
     List<string> AllowedTechniques,
+    string? ImageUrl,
     string? FixedLogoUrl,
     string? FixedLogoFileId,
     int? FixedLogoX,
@@ -45,6 +46,7 @@ public record PrintZoneDto(
             z.AllowedTechniques?
                 .Select(pzt => pzt.PrintTechnique.Name)
                 .ToList() ?? [],
+            z.ImageUrl,
             z.FixedLogoUrl,
             z.FixedLogoFileId,
             z.FixedLogoX,
