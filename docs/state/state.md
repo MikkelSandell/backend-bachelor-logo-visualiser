@@ -9,20 +9,20 @@ stateDiagram-v2
     Oprettet : Oprettet
     Oprettet : Ingen printzoner endnu
 
-    ZonerTilfojet : Zoner tilfojet
-    ZonerTilfojet : Har zoner men mangler\nfuldstaendig metadata
+    ZonerTilfojet : Zoner tilføjet
+    ZonerTilfojet : Har zoner men mangler fuldstændig metadata
 
     FuldtKonfigureret : Fuldt konfigureret
-    FuldtKonfigureret : Alle zoner har navn,\nmm-maal og teknikker
+    FuldtKonfigureret : Alle zoner har navn, mm-mål og teknikker
 
-    Oprettet --> ZonerTilfojet : Admin tegner zone paa canvas
+    Oprettet --> ZonerTilfojet : Admin tegner zone på canvas
     ZonerTilfojet --> Oprettet : Alle zoner slettes
 
-    ZonerTilfojet --> ZonerTilfojet : Zone tilfojet, redigeret\neller slettet
+    ZonerTilfojet --> ZonerTilfojet : Zone tilføjet, redigeret eller slettet
 
-    ZonerTilfojet --> FuldtKonfigureret : Gem aendringer med\nkomplete zone-metadata
+    ZonerTilfojet --> FuldtKonfigureret : Gem ændringer med komplette zone-metadata
 
-    FuldtKonfigureret --> ZonerTilfojet : Zone slettes eller\nmetadata ufuldstaendig
+    FuldtKonfigureret --> ZonerTilfojet : Zone slettes eller metadata ufuldstændig
 
-    FuldtKonfigureret --> FuldtKonfigureret : Zone opdateret\nog gemt
+    FuldtKonfigureret --> FuldtKonfigureret : Zone opdateret og gemt
 ```
