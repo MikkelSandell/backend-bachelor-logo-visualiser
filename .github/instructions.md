@@ -1,4 +1,4 @@
-# GitHub Copilot Instructions — LogoVisualizer Backend
+# GitHub Instructions — LogoVisualizer Backend
 
 ## Project overview
 
