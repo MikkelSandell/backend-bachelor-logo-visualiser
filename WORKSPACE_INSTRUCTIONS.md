@@ -1,4 +1,4 @@
-# CLAUDE.md — LogoVisualizer Backend
+# WORKSPACE_INSTRUCTIONS.md — LogoVisualizer Backend
 
 ---
 
